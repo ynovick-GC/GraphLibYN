@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphStudy_Summer2017", "GraphStudy_Summer2017\GraphStudy_Summer2017.csproj", "{C241274A-B85B-4D56-98A0-7DC2919BFD71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphLibyn", "GraphLibyn\GraphLibyn.csproj", "{55541BF8-8311-4D68-B49B-FE1152F392E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphLibyn_TESTS", "UnitTestProject1\GraphLibyn_TESTS.csproj", "{563AEF84-A83D-4E6C-B235-181ED42C2376}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C241274A-B85B-4D56-98A0-7DC2919BFD71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C241274A-B85B-4D56-98A0-7DC2919BFD71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C241274A-B85B-4D56-98A0-7DC2919BFD71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C241274A-B85B-4D56-98A0-7DC2919BFD71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55541BF8-8311-4D68-B49B-FE1152F392E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55541BF8-8311-4D68-B49B-FE1152F392E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55541BF8-8311-4D68-B49B-FE1152F392E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55541BF8-8311-4D68-B49B-FE1152F392E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{563AEF84-A83D-4E6C-B235-181ED42C2376}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{563AEF84-A83D-4E6C-B235-181ED42C2376}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{563AEF84-A83D-4E6C-B235-181ED42C2376}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{563AEF84-A83D-4E6C-B235-181ED42C2376}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
