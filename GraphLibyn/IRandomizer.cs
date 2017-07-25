@@ -10,5 +10,8 @@ namespace GraphLibyn
     {
         bool GetTrueWithProbability(double p);
         double NextDouble();
+        int Next();
+        int Next(int maxValue);
+        int Next(int minValue, int maxValue);
     }
 }

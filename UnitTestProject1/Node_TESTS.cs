@@ -17,8 +17,9 @@ namespace UnitTestProject1
             {
             }
 
-            // Need this wrapper just to test the method itself, shouldn't be used in other contexts
+            // Need these wrappers just to test the methods themselves, shouldn't be used in other contexts
             public new bool AddNeighbor(Node n) => base.AddNeighbor(n);
+            public new bool RemoveNeighbor(Node n) => base.RemoveNeighbor(n);
 
             // For testing, expose dirty as a readonly variable
             public new bool dirty => base.dirty;
@@ -104,6 +105,43 @@ namespace UnitTestProject1
             Assert.IsFalse(n2.Neighbors.Contains(n2));
             Assert.IsTrue(n2.Neighbors.Contains(n1));
 
+        }
+
+        [TestMethod]
+        public void AddNeighborReturnsCorrectValue()
+        {
+            TestNode n1 = new TestNode("n1");
+            TestNode n2 = new TestNode("n2");
+
+            Assert.IsTrue(n1.AddNeighbor(n2));
+            Assert.IsFalse(n1.AddNeighbor(n2));
+            Assert.IsFalse(n2.AddNeighbor(n1));
+        }
+
+        [TestMethod]
+        public void RemoveNeighborWorksCorrectly()
+        {
+            TestNode n1 = new TestNode("n1");
+            TestNode n2 = new TestNode("n2");
+            n1.AddNeighbor(n2);
+            Assert.IsTrue(n1.Neighbors.Contains(n2));
+            Assert.IsTrue(n2.Neighbors.Contains(n1));
+            n1.RemoveNeighbor(n2);
+            Assert.IsFalse(n1.Neighbors.Contains(n2));
+            Assert.IsFalse(n2.Neighbors.Contains(n1));
+            n2.RemoveNeighbor(n1);
+            Assert.IsFalse(n1.Neighbors.Contains(n2));
+            Assert.IsFalse(n2.Neighbors.Contains(n1));
+        }
+
+        [TestMethod]
+        public void RemoveNeighborReturnsCorrectValue()
+        {
+            TestNode n1 = new TestNode("n1");
+            TestNode n2 = new TestNode("n2");
+            n1.AddNeighbor(n2);
+            Assert.IsTrue(n1.RemoveNeighbor(n2));
+            Assert.IsFalse(n2.RemoveNeighbor(n1));
         }
 
         [TestMethod]
@@ -216,6 +254,28 @@ namespace UnitTestProject1
             Assert.AreEqual(0, GNDegreeZero.Degree);
             Assert.AreEqual(1, GNDegreeOne.Degree);
             Assert.AreEqual(4, GNDegreeFour.Degree);
+        }
+
+        [TestMethod]
+        public void DegreeIsCorrectAfterRemovingEdge()
+        {
+            TestNode n1 = new TestNode("n1");
+            TestNode n2 = new TestNode("n2");
+            TestNode n3 = new TestNode("n3");
+
+            n1.AddNeighbor(n2);
+            n1.AddNeighbor(n3);
+            n2.AddNeighbor(n3);
+
+            Assert.AreEqual(2, n1.Degree);
+            Assert.AreEqual(2, n2.Degree);
+            Assert.AreEqual(2, n3.Degree);
+
+            n2.RemoveNeighbor(n3);
+
+            Assert.AreEqual(2, n1.Degree);
+            Assert.AreEqual(1, n2.Degree);
+            Assert.AreEqual(1, n3.Degree);
         }
 
         [TestMethod]

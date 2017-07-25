@@ -13,6 +13,7 @@ namespace UnitTestProject1
     {
         private Queue<bool> BoolValues;
         private double nextDouble;
+        private int nextInt;
 
         // The queue is always reset completely, whenever the object is used the caller should set all of the values
         // that will be needed for their test scenario, then retrieve them. This is necessary because there are times
@@ -41,6 +42,30 @@ namespace UnitTestProject1
         public double NextDouble()
         {
             return nextDouble;
+        }
+
+        public void SetNextInt(int i)
+        {
+            nextInt = i;
+        }
+
+        public int Next()
+        {
+            return nextInt;
+        }
+
+        public int Next(int maxValue)
+        {
+            if (nextInt >= maxValue)
+                throw new Exception($"Mock object preloaded with value {nextInt} greater or equal than specified max {maxValue}.");
+            return nextInt;
+        }
+
+        public int Next(int minValue, int maxValue)
+        {
+            if (nextInt < minValue || nextInt <= maxValue)
+                throw new Exception($"Mock object preloaded with value {nextInt} out of specified range ({minValue}, {maxValue}).");
+            return nextInt;
         }
     }
 }

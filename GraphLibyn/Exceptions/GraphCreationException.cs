@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GraphLibyn.Exceptions
 {
-    public class GraphCreationException : Exception
+    public class GraphCreationException : GraphException
     {
         public GraphCreationException() : base()
         {

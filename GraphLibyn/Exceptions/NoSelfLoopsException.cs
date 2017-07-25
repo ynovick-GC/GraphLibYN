@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GraphLibyn.Exceptions
 {
-    public class NoSelfLoopsException : Exception
+    public class NoSelfLoopsException : GraphException
     {
         public NoSelfLoopsException() : base()
         {

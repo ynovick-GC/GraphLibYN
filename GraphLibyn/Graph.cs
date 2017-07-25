@@ -31,11 +31,9 @@ namespace GraphLibyn
                 return graphNode;
             }
 
-            // Class basically exists for this method, the publicly accessible Node can't be modified, here in the Graph this one can be
-            public bool AddNeighbor(GraphNode n)
-            {
-                return base.AddNeighbor(n);
-            }
+            // Class basically exists for these methods, the publicly accessible Node can't be modified, here in the Graph this one can be
+            public bool AddNeighbor(GraphNode n) => base.AddNeighbor(n);
+            public bool RemoveNeighbor(GraphNode n) => base.RemoveNeighbor(n);
         }
 
         // Simple wrapper, easier to call as method of the graph than it is to always pass in "this"
@@ -50,6 +48,12 @@ namespace GraphLibyn
             _allEdgesAsNodes = null;
             _degreeVector = null;
             _fiVector = null;
+            _degreeCountDictionary = null;
+            _nodeDegreeProbabilityDictionary = null;
+            _edgeNodeDegreeProbabilityDictionary = null;
+            _jointEdgeNodeExcessDegreeProbabilityDictionary = null;
+            _excessDegreeVariance = Double.NegativeInfinity;
+            _graphAssortativity = double.NegativeInfinity;
         }
 
         protected Dictionary<string, GraphNode> _nodes = new Dictionary<string, GraphNode>();
@@ -154,17 +158,414 @@ namespace GraphLibyn
             return true;
         }
 
+        protected bool RemoveEdge(Node node1, Node node2)
+        {
+            if (((GraphNode) node1).RemoveNeighbor((GraphNode) node2))
+            {
+                ResetCollections();
+                return true;
+            }
+            return false;
+
+        }
+
+        public bool RemoveEdge(string id1, string id2)
+        {
+            if (!_nodes.ContainsKey(id1) || !_nodes.ContainsKey(id2))
+                throw new GraphException($"Remove edge failed, {id1} or {id2} is not in the graph.");
+            return RemoveEdge(_nodes[id1], _nodes[id2]);
+        }
+
         private List<int> _degreeVector = null;
         public IEnumerable<int> DegreeVector
         {
             get { return _degreeVector ?? (_degreeVector = AllNodes.Select(n => n.Degree).OrderBy(i => i).ToList()); }
         }
 
+        // useful function to give back the histogram as a string
+        public string DegreeHistogram(Func<int, int> grpByFunc = null, string kvDelim = ":\t\t", string binDelim = "\n", bool ascendingOrder = true)
+            => ascendingOrder
+                ? string.Join(binDelim,
+                    DegreeVector.GroupBy(grpByFunc ?? (i => i)).OrderBy(g => g.Key).Select(g => g.Key + kvDelim + g.Count()))
+                : string.Join(binDelim,
+                    DegreeVector.GroupBy(grpByFunc ?? (i => i)).OrderByDescending(g => g.Key).Select(g => g.Key + kvDelim + g.Count()));
+
         private List<double> _fiVector = null;
         public IEnumerable<double> FiVector
         {
             get { return _fiVector ?? (_fiVector = AllNodes.Select(n => n.FIndex).OrderBy(d => d).ToList()); }
         }
+
+        // useful function to give back the histogram as a string
+        public string FiVectorHistogram(Func<double, double> grpByFunc = null, string kvDelim = ":\t\t", string binDelim = "\n", bool ascendingOrder = true)
+            => ascendingOrder
+                ? string.Join(binDelim,
+                    FiVector.GroupBy(grpByFunc ?? (d => d)).OrderBy(g => g.Key).Select(g => g.Key + kvDelim + g.Count()))
+                : string.Join(binDelim,
+                    FiVector.GroupBy(grpByFunc ?? (d => d)).OrderByDescending(g => g.Key).Select(g => g.Key + kvDelim + g.Count()));
+
+
+        private Dictionary<int, int> _degreeCountDictionary = null;
+        public Dictionary<int, int> DegreeCountDictionary
+        {
+            get {
+                return _degreeCountDictionary ??
+                       (_degreeCountDictionary =
+                           AllNodes.GroupBy(n => n.Degree).ToDictionary(g => g.Key, g => g.Count()));
+            }
+        }
+
+        private Dictionary<int, double> _nodeDegreeProbabilityDictionary = null;
+
+        private Dictionary<int, double> NodeDegreeProbabilityDictionary
+        {
+            get
+            {
+                return _nodeDegreeProbabilityDictionary ??
+                       (_nodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
+                           .ToDictionary(g => g.Key, g => (double) g.Count()/AllNodes.Count()));
+            }
+        }
+
+        public double GetNodeDegreeProbability(int degree)
+        {
+
+            if (!NodeDegreeProbabilityDictionary.ContainsKey(degree))
+                return 0;
+            return NodeDegreeProbabilityDictionary[degree];
+        }
+
+        private Dictionary<int, double> _edgeNodeDegreeProbabilityDictionary = null;
+        private Dictionary<int, double> EdgeNodeDegreeProbabilityDictionary
+        {
+            get
+            {
+                if (_edgeNodeDegreeProbabilityDictionary != null) return _edgeNodeDegreeProbabilityDictionary;
+                double denom = AllNodes.Sum(n => n.Degree);
+                _edgeNodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
+                    .ToDictionary(g => g.Key, g => g.Count()*g.Key/denom);
+                return _edgeNodeDegreeProbabilityDictionary;
+            }
+        }
+        public double GetEdgeNodeDegreeProbability(int degree)
+        {
+            if (!EdgeNodeDegreeProbabilityDictionary.ContainsKey(degree))
+                return 0;
+            return _edgeNodeDegreeProbabilityDictionary[degree];
+        }
+
+        // For Newman's assortativity measure, q_k refers to the probability of an excess degree of k based on edges
+        public double GetEdgeExcessNodeDegreeProbability(int excessDegree)
+            => GetEdgeNodeDegreeProbability(excessDegree + 1);
+
+        // The joint probability that both ends of an edge will have excess degrees j and k
+        private Dictionary<int, Dictionary<int, double>> _jointEdgeNodeExcessDegreeProbabilityDictionary = null;
+
+        private Dictionary<int, Dictionary<int, double>> JointEdgeNodeExcessDegreeProbabilityDictionary
+        {
+            get
+            {
+                if (_jointEdgeNodeExcessDegreeProbabilityDictionary != null) return _jointEdgeNodeExcessDegreeProbabilityDictionary;
+                _jointEdgeNodeExcessDegreeProbabilityDictionary = new Dictionary<int, Dictionary<int, double>>();
+                var excDegreeGroups = AllNodes.GroupBy(n => n.ExcDegree);
+                foreach (var excDegreeGroup in excDegreeGroups)
+                {
+                    _jointEdgeNodeExcessDegreeProbabilityDictionary[excDegreeGroup.Key] = new Dictionary<int, double>();
+                    var allNeighbors = excDegreeGroup.SelectMany(n => n.Neighbors).GroupBy(n => n.ExcDegree);
+                    var totalExcDegree = (excDegreeGroup.Key + 1)*excDegreeGroup.Count();
+                    foreach (var neighborGroup in allNeighbors)
+                    {
+                        _jointEdgeNodeExcessDegreeProbabilityDictionary[excDegreeGroup.Key][neighborGroup.Key] =
+                            GetEdgeExcessNodeDegreeProbability(excDegreeGroup.Key)*
+                            ((double) neighborGroup.Count()/totalExcDegree);
+                    }
+                }
+                return _jointEdgeNodeExcessDegreeProbabilityDictionary;
+            }
+        }
+
+        public double GetEdgeExcessNodeDegreeProbability(int j, int k)
+        {
+
+            if (!JointEdgeNodeExcessDegreeProbabilityDictionary.ContainsKey(j))
+                return 0.0;
+            if (!JointEdgeNodeExcessDegreeProbabilityDictionary[j].ContainsKey(k))
+                return 0.0;
+            return JointEdgeNodeExcessDegreeProbabilityDictionary[j][k];
+        }
+
+        private double _excessDegreeVariance = Double.NegativeInfinity;
+
+        public double ExcessDegreeVariance
+        {
+            get
+            {
+                return double.IsNegativeInfinity(_excessDegreeVariance)
+                    ? (_excessDegreeVariance =
+                        EdgeNodeDegreeProbabilityDictionary.Sum(kvp => Math.Pow(kvp.Key - 1, 2)*kvp.Value) -
+                        Math.Pow(EdgeNodeDegreeProbabilityDictionary.Sum(kvp => (kvp.Key - 1)*kvp.Value), 2))
+                    : _excessDegreeVariance;
+
+            }
+        }
+
+        private double _graphAssortativity = double.NegativeInfinity;
+
+        public double GraphAssortativity
+        {
+            get
+            {
+                if (!double.IsNegativeInfinity(_graphAssortativity))
+                    return _graphAssortativity;
+
+                if (ExcessDegreeVariance == 0) // All vertices are the same degree, automatically perfect assortativity
+                    return _graphAssortativity = 1.0;
+
+                var AllExcessDegrees = AllNodes.Select(n => n.ExcDegree).Distinct().ToList();
+                var total = 0.0;
+
+                foreach (var j in AllExcessDegrees)
+                    foreach (var k in AllExcessDegrees)
+                        total += j*k*
+                                 (GetEdgeExcessNodeDegreeProbability(j, k) -
+                                  GetEdgeExcessNodeDegreeProbability(j)*GetEdgeExcessNodeDegreeProbability(k));
+                return _graphAssortativity = total/ExcessDegreeVariance;
+
+            }
+        }
+
+        // This is a second version following the more typical corelation equation, I'm mostly
+        // including it for verification, may completely take it out.. YN 7/17/17
+        public double GraphAssortativity2()
+        {
+
+            if (ExcessDegreeVariance == 0) // All vertices are the same degree, automatically perfect assortativity
+                return _graphAssortativity = 1.0;
+
+            double M = Edges.Count();
+            double numerator = ((1/M)*(EdgesAsNodes.Sum(e => e.Item1.Degree*e.Item2.Degree)) -
+                                Math.Pow((1/M)*0.5*EdgesAsNodes.Sum(e => e.Item1.Degree + e.Item2.Degree), 2.0));
+            double denominator = ((1/M)*0.5*
+                                  EdgesAsNodes.Sum(e => Math.Pow(e.Item1.Degree, 2) + Math.Pow(e.Item2.Degree, 2)) -
+                                  Math.Pow((1/M)*0.5*EdgesAsNodes.Sum(e => e.Item1.Degree + e.Item2.Degree), 2.0));
+
+            return numerator/denominator;
+        }
+
+        // This is experimental (for now at least), trying to see if we can swap edges and change assortativity while
+        // maintaining the degree vector
+        public bool SwapRandomEdgesToIncreaseAssortativity()
+        {
+            Randomizer rand = new Randomizer();
+
+            var edges = EdgesAsNodes.ToList();
+            var e1 = edges[rand.Next(edges.Count)];
+            var e2 = edges[rand.Next(edges.Count)];
+
+            if (e1.Item1 == e2.Item1 || e1.Item1 == e2.Item2 || e1.Item2 == e2.Item1 || e1.Item2 == e2.Item2)
+                return false;
+
+
+            var currVal = ((double) Math.Max(e1.Item1.Degree, e1.Item2.Degree)/
+                           Math.Min(e1.Item1.Degree, e1.Item2.Degree) +
+                           (double) Math.Max(e2.Item1.Degree, e2.Item2.Degree)/
+                           Math.Min(e2.Item1.Degree, e2.Item2.Degree))/2.0;
+            var e1Ae2A = ((double) Math.Max(e1.Item1.Degree, e2.Item1.Degree)/
+                          Math.Min(e1.Item1.Degree, e2.Item1.Degree) +
+                          (double) Math.Max(e1.Item2.Degree, e2.Item2.Degree)/
+                          Math.Min(e1.Item2.Degree, e2.Item2.Degree))/2.0;
+            var e1Ae2B = ((double) Math.Max(e1.Item1.Degree, e2.Item2.Degree)/
+                          Math.Min(e1.Item1.Degree, e2.Item2.Degree) +
+                          (double) Math.Max(e1.Item2.Degree, e2.Item1.Degree)/
+                          Math.Min(e1.Item2.Degree, e2.Item1.Degree))/2.0;
+
+            String oldDegSeq = String.Join(",", DegreeVector);
+
+            if (e1Ae2A < currVal && e1Ae2A < e1Ae2B
+                && !e1.Item1.Neighbors.Contains(e2.Item1) && !e1.Item2.Neighbors.Contains(e2.Item2))
+            {
+                RemoveEdge(e1.Item1, e1.Item2);
+                RemoveEdge(e2.Item1, e2.Item2);
+                AddEdge(e1.Item1, e2.Item1);
+                AddEdge(e1.Item2, e2.Item2);
+                if (oldDegSeq != String.Join(",", DegreeVector))
+                    throw new Exception("Holy cow");
+                return true;
+            }
+            else if (e1Ae2B < currVal && e1Ae2B < e1Ae2A
+                && !e1.Item1.Neighbors.Contains(e2.Item2) && !e1.Item2.Neighbors.Contains(e2.Item1))
+            {
+                RemoveEdge(e1.Item1, e1.Item2);
+                RemoveEdge(e2.Item1, e2.Item2);
+                AddEdge(e1.Item1, e2.Item2);
+                AddEdge(e1.Item2, e2.Item1);
+                if (oldDegSeq != String.Join(",", DegreeVector))
+                    throw new Exception("Holy cow");
+                return true;
+            }
+            return false;
+
+        }
+
+        public void SwapRandomEdgesToIncreaseAssortativity(int iters)
+        {
+            for (int i = 0; i < iters; i++)
+                SwapRandomEdgesToIncreaseAssortativity();
+        }
+
+        private enum EdgeSwap
+        {
+            //e1Ae1B_e2Ae2B, // current configuration
+            e1Ae2A_e1Be2B,
+            e1Ae2B_e1Be2A
+        }
+
+        public void IterativelySwapEdgesToIncreaseAssortativity()
+        {
+            var edges = EdgesAsNodes.OrderBy(e => LocalAssort(e)).ToList();
+            while (edges.Count > 1)
+            {
+                var e1 = edges[0];
+                edges.Remove(e1);
+                var otherEdges =
+                    edges.Where(
+                        e2 =>
+                            e1.Item1 != e2.Item1 &&
+                            e1.Item1 != e2.Item2 &&
+                            e1.Item2 != e2.Item1 &&
+                            e1.Item2 != e2.Item2).ToList();
+
+                var currVal = LocalAssort(e1);
+                var currMaxImprovement = 0.0;
+                Tuple<Node, Node> currMaxEdge = null;
+                EdgeSwap bestEdgeSwap = EdgeSwap.e1Ae2A_e1Be2B; // just need to assign something..
+
+                foreach (var e2 in otherEdges)
+                {
+                    double improvement;
+
+                    if (!e1.Item1.Neighbors.Contains(e2.Item1) && !e1.Item2.Neighbors.Contains(e2.Item2))
+                    {
+                        improvement = (LocalAssort(new Tuple<Node, Node>(e1.Item1, e2.Item1)) +
+                                       LocalAssort(new Tuple<Node, Node>(e1.Item2, e2.Item2)))/
+                                      2.0 - currVal;
+                        if (improvement > currMaxImprovement)
+                        {
+                            currMaxImprovement = improvement;
+                            currMaxEdge = e2;
+                            bestEdgeSwap = EdgeSwap.e1Ae2A_e1Be2B;
+                        }
+                    }
+                    if (!e1.Item1.Neighbors.Contains(e2.Item2) && !e1.Item2.Neighbors.Contains(e2.Item1))
+                    {
+                        improvement = (LocalAssort(new Tuple<Node, Node>(e1.Item1, e2.Item2)) +
+                                       LocalAssort(new Tuple<Node, Node>(e1.Item2, e2.Item1)))/
+                                      2.0 - currVal;
+                        if (improvement > currMaxImprovement)
+                        {
+                            currMaxImprovement = improvement;
+                            currMaxEdge = e2;
+                            bestEdgeSwap = EdgeSwap.e1Ae2B_e1Be2A;
+                        }
+                    }
+
+                }
+
+                if (currMaxEdge != null)
+                {
+                    if (bestEdgeSwap == EdgeSwap.e1Ae2A_e1Be2B)
+                    {
+                        AddEdge(e1.Item1, currMaxEdge.Item1);
+                        AddEdge(e1.Item2, currMaxEdge.Item2);
+                    }
+                    else
+                    {
+                        AddEdge(e1.Item1, currMaxEdge.Item2);
+                        AddEdge(e1.Item2, currMaxEdge.Item1);
+                    }
+                    RemoveEdge(e1.Item1, e1.Item2);
+                    RemoveEdge(currMaxEdge.Item1, currMaxEdge.Item2);
+                    edges.Remove(currMaxEdge);
+                }
+            }
+        }
+
+        public void IterativelySwapEdgesToDecreaseAssortativity()
+        {
+            var edges = EdgesAsNodes.OrderByDescending(e => LocalAssort(e)).ToList();
+            while (edges.Count > 1)
+            {
+                var e1 = edges[0];
+                edges.Remove(e1);
+                var otherEdges =
+                    edges.Where(
+                        e2 =>
+                            e1.Item1 != e2.Item1 &&
+                            e1.Item1 != e2.Item2 &&
+                            e1.Item2 != e2.Item1 &&
+                            e1.Item2 != e2.Item2).ToList();
+
+                var currVal = LocalAssort(e1);
+                var currMaxImprovement = 0.0;
+                Tuple<Node, Node> currMaxEdge = null;
+                EdgeSwap bestEdgeSwap = EdgeSwap.e1Ae2A_e1Be2B; // just need to assign something..
+
+                foreach (var e2 in otherEdges)
+                {
+                    double improvement;
+
+                    if (!e1.Item1.Neighbors.Contains(e2.Item1) && !e1.Item2.Neighbors.Contains(e2.Item2))
+                    {
+                        improvement = currVal - (LocalAssort(new Tuple<Node, Node>(e1.Item1, e2.Item1)) +
+                                      LocalAssort(new Tuple<Node, Node>(e1.Item2, e2.Item2))) /
+                                      2.0;
+                        if (improvement > currMaxImprovement)
+                        {
+                            currMaxImprovement = improvement;
+                            currMaxEdge = e2;
+                            bestEdgeSwap = EdgeSwap.e1Ae2A_e1Be2B;
+                        }
+                    }
+                    if (!e1.Item1.Neighbors.Contains(e2.Item2) && !e1.Item2.Neighbors.Contains(e2.Item1))
+                    {
+                        improvement = currVal - (LocalAssort(new Tuple<Node, Node>(e1.Item1, e2.Item2)) +
+                                       LocalAssort(new Tuple<Node, Node>(e1.Item2, e2.Item1))) /
+                                      2.0;
+                        if (improvement > currMaxImprovement)
+                        {
+                            currMaxImprovement = improvement;
+                            currMaxEdge = e2;
+                            bestEdgeSwap = EdgeSwap.e1Ae2B_e1Be2A;
+                        }
+                    }
+
+                }
+
+                if (currMaxEdge != null)
+                {
+                    if (bestEdgeSwap == EdgeSwap.e1Ae2A_e1Be2B)
+                    {
+                        AddEdge(e1.Item1, currMaxEdge.Item1);
+                        AddEdge(e1.Item2, currMaxEdge.Item2);
+                    }
+                    else
+                    {
+                        AddEdge(e1.Item1, currMaxEdge.Item2);
+                        AddEdge(e1.Item2, currMaxEdge.Item1);
+                    }
+                    RemoveEdge(e1.Item1, e1.Item2);
+                    RemoveEdge(currMaxEdge.Item1, currMaxEdge.Item2);
+                    edges.Remove(currMaxEdge);
+                }
+            }
+        }
+
+
+        // For edge swapping, define this measure of local assortativity, Min/Max s.t. the result will be between 0 and 1, 1 is the highest assortativity 
+        private double LocalAssort(Tuple<Node, Node> edge)
+            => (double)Math.Min(edge.Item1.Degree, edge.Item2.Degree)/Math.Max(edge.Item1.Degree, edge.Item2.Degree);
+
+
 
         /// <summary>
         /// Parse a graph from a string of lines (delimted by \n) in the form of N1\tN2
@@ -254,6 +655,19 @@ namespace GraphLibyn
         public static Graph ParseGraphFromTsvNodeNeighborsFile(string path, bool AddMissingEdges = false)
         {
             return ParseGraphFromTsvNodeNeighborsString(File.ReadAllText(path), AddMissingEdges);
+        }
+
+        public static Graph Clone(Graph graph)
+        {
+            Graph retGraph = new Graph();
+            foreach (var edge in graph.Edges)
+                retGraph.AddEdge(edge.Item1, edge.Item2);
+            return retGraph;
+        }
+
+        public Graph Clone()
+        {
+            return Clone(this);
         }
 
     }

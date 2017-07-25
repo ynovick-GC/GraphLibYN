@@ -33,5 +33,20 @@ namespace GraphLibyn
         {
             return random.NextDouble();
         }
+
+        public int Next()
+        {
+            return random.Next();
+        }
+
+        public int Next(int maxValue)
+        {
+            return random.Next(maxValue);
+        }
+
+        public int Next(int minValue, int maxValue)
+        {
+            return random.Next(minValue, maxValue);
+        }
     }
 }

@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -40,11 +42,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BaCallawayGraph.cs" />
     <Compile Include="BaGraph.cs" />
     <Compile Include="ErGraph.cs" />
     <Compile Include="Exceptions\DegreeZeroNodeInGraphException.cs" />
     <Compile Include="Exceptions\EmptyGraphException.cs" />
     <Compile Include="Exceptions\GraphCreationException.cs" />
+    <Compile Include="Exceptions\GraphException.cs" />
     <Compile Include="Exceptions\NoSelfLoopsException.cs" />
     <Compile Include="Graph.cs" />
     <Compile Include="Node.cs" />

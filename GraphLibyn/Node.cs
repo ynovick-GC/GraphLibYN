@@ -53,8 +53,21 @@ namespace GraphLibyn
             return changeMade;
         }
 
+        protected bool RemoveNeighbor(Node n)
+        {
+            if (!Neighbors.Contains(n))
+                return false;
+
+            n._neighbors.Remove(this);
+            _neighbors.Remove(n);
+            n.dirty = true;
+            dirty = true;
+            return true;
+        }
+
         // Assuming _neighbors already has an updated Count property so no going through Neighbors and forcing a recalculation if dirty
         public int Degree => _neighbors.Count;
+        public int ExcDegree => Degree - 1; // Newman's assortativity measure makes use of "excess", or "remaining", degree
 
         public double AvgOfNeighborsDegree
         {

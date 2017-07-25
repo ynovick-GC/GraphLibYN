@@ -90,6 +90,47 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
+        public void ProtectedRemoveEdgeRemovesCorrectly()
+        {
+            GraphProtectedMethods_TESTS graph = new GraphProtectedMethods_TESTS();
+            TestGraphs.Add(graph);
+            
+            graph.AddEdge("n1", "n2", true);
+            graph.AddEdge("n2", "n3", true);
+            graph.AddEdge("n1", "n3");
+
+            Assert.IsTrue(graph.AllNodes.All(n => n.Degree == 2));
+
+            Node n1 = graph.AllNodes.First(n => n.Id == "n1");
+            Node n2 = graph.AllNodes.First(n => n.Id == "n2");
+            Node n3 = graph.AllNodes.First(n => n.Id == "n3");
+
+            graph.RemoveEdge(n1, n3);
+
+            Assert.AreEqual("1,1,2", String.Join(",", graph.AllNodes.Select(n => n.Degree).OrderBy(n => n)));
+            Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
+        }
+
+        [TestMethod]
+        public void ProtectedRemoveEdgeReturnsCorrectValue()
+        {
+            GraphProtectedMethods_TESTS graph = new GraphProtectedMethods_TESTS();
+            TestGraphs.Add(graph);
+
+            Node n1 = graph.NewGraphNode("n1");
+            Node n2 = graph.NewGraphNode("n2");
+
+            graph.AddEdge(n1, n2);
+
+            Assert.IsTrue(graph.AllNodes.All(n => n.Degree == 1));
+
+            Assert.IsTrue(graph.RemoveEdge(n1, n2));
+            Assert.IsFalse(graph.RemoveEdge(n1, n2));
+
+            Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
+        }
+
+        [TestMethod]
         public void ProtectedEdgesPropertyIsCorrect()
         {
             GraphProtectedMethods_TESTS g = new GraphProtectedMethods_TESTS();

@@ -8,7 +8,7 @@ namespace GraphLibyn.Exceptions
 {
     // For friendship paradox we just have to exclude all vertices of degree 0 so we'll just exclude them
     // on the node level
-    public class EmptyGraphException : Exception
+    public class EmptyGraphException : GraphException
     {
         public EmptyGraphException() : base()
         {
