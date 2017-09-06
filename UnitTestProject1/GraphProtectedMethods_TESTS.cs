@@ -49,31 +49,18 @@ namespace UnitTestProject1
             g.AddEdge("n1", "n2");
             g.AddEdge("n2", "n3");
 
-            Node n4 = new Node("n4");
+            Node n4 = new Node("n4", g);
             g.AddEdge(n4, g.AllNodes.First(n => n.Id == "n2"), true);
             Assert.IsTrue(g.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n4"),
                 "Connecting one existing node with one new one failed.");
 
-            Node n5 = new Node("n5");
-            Node n6 = new Node("n6");
+            Node n5 = new Node("n5", g);
+            Node n6 = new Node("n6", g);
             g.AddEdge(n5, n6, true);
             Assert.IsTrue(g.AllNodes.First(n => n.Id == "n5").Neighbors.Any(n => n.Id == "n6"),
                 "Connecting two new nodes and adding to graph failed.");
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(GraphCreationException))]
-        public void ProtectedAddEdgeThrowsExceptionIfIdExists()
-        {
-            GraphProtectedMethods_TESTS g = new GraphProtectedMethods_TESTS();
-
-            g.AddEdge("n1", "n2");
-            g.AddEdge("n2", "n3");
-
-            Node n1 = new Node("n1");
-            g.AddEdge(n1, g.AllNodes.First(n => n.Id == "n3"), true);
         }
 
         [TestMethod]

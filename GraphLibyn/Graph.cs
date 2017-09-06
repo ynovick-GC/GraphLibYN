@@ -8,25 +8,27 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using GraphLibyn.Exceptions;
+using Newtonsoft.Json;
 
 namespace GraphLibyn
 {
     public class Graph
     {
+        private bool cacheIsEmpty = true;
         // Internally the class will always work with this node that exposes the AddNeighbor method
         // Externally everything should be done with string IDs. So all nodes in a Graph should be
         // GraphNodes and it will always be safe to cast them, but externally they will be Nodes
         protected class GraphNode : Node
         {
             // Make ctor private, only give access through method 
-            private GraphNode(string id) : base(id) { }
+            private GraphNode(string id, Graph graph) : base(id, graph) { }
 
             // ensure that any GraphNode that is created is part of a graph
             public static GraphNode NewGraphNode(string id, Graph graph)
             {
                 if (graph._nodes.ContainsKey(id))
                     throw new GraphCreationException("Id is already present, perhaps with 0 degree.");
-                GraphNode graphNode = new GraphNode(id);
+                GraphNode graphNode = new GraphNode(id, graph);
                 graph._nodes[id] = graphNode;
                 return graphNode;
             }
@@ -34,6 +36,18 @@ namespace GraphLibyn
             // Class basically exists for these methods, the publicly accessible Node can't be modified, here in the Graph this one can be
             public bool AddNeighbor(GraphNode n) => base.AddNeighbor(n);
             public bool RemoveNeighbor(GraphNode n) => base.RemoveNeighbor(n);
+
+            // When a graph is dirty, the nodes also have to be set to dirty because a change in one node could affect
+            // a different one that isn't automatically made dirty by the change. So the graph needs to reset nodes.
+            public new void ResetCache()
+            {
+                base.EmptyCache();
+            }
+
+            public void SetGraph(Graph graph)
+            {
+                _graph = graph;
+            }
         }
 
         // Simple wrapper, easier to call as method of the graph than it is to always pass in "this"
@@ -42,18 +56,31 @@ namespace GraphLibyn
             return GraphNode.NewGraphNode(id, this);
         }
 
-        protected void ResetCollections()
+        protected void EmptyCache()
         {
-            _allNodes = null;
-            _allEdgesAsNodes = null;
-            _degreeVector = null;
-            _fiVector = null;
-            _degreeCountDictionary = null;
-            _nodeDegreeProbabilityDictionary = null;
-            _edgeNodeDegreeProbabilityDictionary = null;
-            _jointEdgeNodeExcessDegreeProbabilityDictionary = null;
-            _excessDegreeVariance = Double.NegativeInfinity;
-            _graphAssortativity = double.NegativeInfinity;
+            if (!cacheIsEmpty)
+            {
+                _allNodes = null;
+                _allEdgesAsNodes = null;
+                _degreeVector = null;
+                _fiVector = null;
+                _degreeCountDictionary = null;
+                _nodeDegreeProbabilityDictionary = null;
+                _edgeNodeDegreeProbabilityDictionary = null;
+                _jointEdgeNodeExcessDegreeProbabilityDictionary = null;
+                _excessDegreeVariance = Double.NegativeInfinity;
+                _graphAssortativity = Double.NegativeInfinity;
+                _graphAssortativity2 = Double.NegativeInfinity;
+                _sumOfAllNodesAvgDiffs = Double.NegativeInfinity;
+                _thedchansLambda = Double.NegativeInfinity;
+                _sumOfAllFiMaxOverMin = Double.NegativeInfinity;
+                _sumOfAllFiAbsoluteOfLn = Double.NegativeInfinity;
+                // Design decision, it's too hard to differntiate between the node values that affect only themselves
+                // and those that affect other nodes (and how many hops away, etc.) so any time the graph is dirty we
+                // will force all node values to be reset as well
+                AllNodes.ToList().ForEach(n => ((GraphNode) n).ResetCache());
+            }
+            cacheIsEmpty = true;
         }
 
         protected Dictionary<string, GraphNode> _nodes = new Dictionary<string, GraphNode>();
@@ -62,6 +89,7 @@ namespace GraphLibyn
         {
             get
             {
+                cacheIsEmpty = false;
                 if (_allNodes == null)
                 {
                     if(!_nodes.Any(kvp => kvp.Value.Degree > 0))
@@ -74,11 +102,11 @@ namespace GraphLibyn
 
         // For internal use, can get all edges as Tuples of Node,Node
         private List<Tuple<Node, Node>> _allEdgesAsNodes = null;
-
         protected IEnumerable<Tuple<Node, Node>> EdgesAsNodes
         {
             get
             {
+                cacheIsEmpty = false;
                 return _allEdgesAsNodes ?? (_allEdgesAsNodes = AllNodes.SelectMany(n => n.Neighbors.Select(n2 =>
                                n.Id.CompareTo(n2.Id) < 0
                                    ? new Tuple<Node, Node>(n, n2)
@@ -99,7 +127,7 @@ namespace GraphLibyn
                 return false;
             NewGraphNode(Id);
             
-            // NOTE: not resetting the collections because a new node is degree 0 and won't be included so this change doesn't affect anything
+            // NOTE: not resetting the cache because a new node is degree 0 and won't be included so this change doesn't affect anything
 
             return true;
         }
@@ -114,14 +142,6 @@ namespace GraphLibyn
 
             if(!addNodesToGraphIfAbsent && (!_nodes.Values.Contains(n1) || !_nodes.Values.Contains(n2)))
                 throw new GraphCreationException("Call to protected AddEdge(Node n1, Node n2) with nodes absent from graph");
-
-            // This next one really can't be tested. Externally you can't create GraphNodes, only nodes. So the only way externally to add a
-            // GraphNode that is not part of the graph is if it is part of another graph. Bit remote. So just relying on this exception
-            // to be correct if something interally would create a GraphNode and add it to a Graph that already has a Node with that ID.
-            if ((!_nodes.Values.Contains(n1) && _nodes.Values.Any(n => n.Id == n1.Id)) ||
-                (!_nodes.Values.Contains(n2) && _nodes.Values.Any(n => n.Id == n2.Id)))
-                throw new GraphCreationException(
-                    "Trying to add node that is absent from graph but another node with this id exists");
 
             bool changeMade = false;
             if (!_nodes.ContainsKey(n1.Id))
@@ -138,7 +158,7 @@ namespace GraphLibyn
                 changeMade = true;
 
             if (changeMade)
-                ResetCollections();
+                EmptyCache();
 
             return changeMade;
         }
@@ -154,7 +174,7 @@ namespace GraphLibyn
             GraphNode n2 = _nodes.ContainsKey(id2) ? _nodes[id2] : NewGraphNode(id2);
 
             n1.AddNeighbor(n2);
-            ResetCollections();
+            EmptyCache();
             return true;
         }
 
@@ -162,7 +182,7 @@ namespace GraphLibyn
         {
             if (((GraphNode) node1).RemoveNeighbor((GraphNode) node2))
             {
-                ResetCollections();
+                EmptyCache();
                 return true;
             }
             return false;
@@ -177,9 +197,14 @@ namespace GraphLibyn
         }
 
         private List<int> _degreeVector = null;
+
         public IEnumerable<int> DegreeVector
         {
-            get { return _degreeVector ?? (_degreeVector = AllNodes.Select(n => n.Degree).OrderBy(i => i).ToList()); }
+            get
+            {
+                cacheIsEmpty = false;
+                return _degreeVector ?? (_degreeVector = AllNodes.Select(n => n.Degree).OrderBy(i => i).ToList());
+            }
         }
 
         // useful function to give back the histogram as a string
@@ -191,9 +216,14 @@ namespace GraphLibyn
                     DegreeVector.GroupBy(grpByFunc ?? (i => i)).OrderByDescending(g => g.Key).Select(g => g.Key + kvDelim + g.Count()));
 
         private List<double> _fiVector = null;
+
         public IEnumerable<double> FiVector
         {
-            get { return _fiVector ?? (_fiVector = AllNodes.Select(n => n.FIndex).OrderBy(d => d).ToList()); }
+            get
+            {
+                cacheIsEmpty = false;
+                return _fiVector ?? (_fiVector = AllNodes.Select(n => n.FIndex).OrderBy(d => d).ToList());
+            }
         }
 
         // useful function to give back the histogram as a string
@@ -208,7 +238,9 @@ namespace GraphLibyn
         private Dictionary<int, int> _degreeCountDictionary = null;
         public Dictionary<int, int> DegreeCountDictionary
         {
-            get {
+            get
+            {
+                cacheIsEmpty = false;
                 return _degreeCountDictionary ??
                        (_degreeCountDictionary =
                            AllNodes.GroupBy(n => n.Degree).ToDictionary(g => g.Key, g => g.Count()));
@@ -221,6 +253,7 @@ namespace GraphLibyn
         {
             get
             {
+                cacheIsEmpty = false;
                 return _nodeDegreeProbabilityDictionary ??
                        (_nodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
                            .ToDictionary(g => g.Key, g => (double) g.Count()/AllNodes.Count()));
@@ -240,11 +273,11 @@ namespace GraphLibyn
         {
             get
             {
+                cacheIsEmpty = false;
                 if (_edgeNodeDegreeProbabilityDictionary != null) return _edgeNodeDegreeProbabilityDictionary;
                 double denom = AllNodes.Sum(n => n.Degree);
-                _edgeNodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
+                 return _edgeNodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
                     .ToDictionary(g => g.Key, g => g.Count()*g.Key/denom);
-                return _edgeNodeDegreeProbabilityDictionary;
             }
         }
         public double GetEdgeNodeDegreeProbability(int degree)
@@ -265,6 +298,7 @@ namespace GraphLibyn
         {
             get
             {
+                cacheIsEmpty = false;
                 if (_jointEdgeNodeExcessDegreeProbabilityDictionary != null) return _jointEdgeNodeExcessDegreeProbabilityDictionary;
                 _jointEdgeNodeExcessDegreeProbabilityDictionary = new Dictionary<int, Dictionary<int, double>>();
                 var excDegreeGroups = AllNodes.GroupBy(n => n.ExcDegree);
@@ -300,6 +334,7 @@ namespace GraphLibyn
         {
             get
             {
+                cacheIsEmpty = false;
                 return double.IsNegativeInfinity(_excessDegreeVariance)
                     ? (_excessDegreeVariance =
                         EdgeNodeDegreeProbabilityDictionary.Sum(kvp => Math.Pow(kvp.Key - 1, 2)*kvp.Value) -
@@ -315,6 +350,7 @@ namespace GraphLibyn
         {
             get
             {
+                cacheIsEmpty = false;
                 if (!double.IsNegativeInfinity(_graphAssortativity))
                     return _graphAssortativity;
 
@@ -336,11 +372,15 @@ namespace GraphLibyn
 
         // This is a second version following the more typical corelation equation, I'm mostly
         // including it for verification, may completely take it out.. YN 7/17/17
+        private double _graphAssortativity2 = double.NegativeInfinity;
         public double GraphAssortativity2()
         {
+            cacheIsEmpty = false;
+            if (!Double.IsNegativeInfinity(_graphAssortativity2))
+                return _graphAssortativity2;
 
             if (ExcessDegreeVariance == 0) // All vertices are the same degree, automatically perfect assortativity
-                return _graphAssortativity = 1.0;
+                return _graphAssortativity2 = 1.0;
 
             double M = Edges.Count();
             double numerator = ((1/M)*(EdgesAsNodes.Sum(e => e.Item1.Degree*e.Item2.Degree)) -
@@ -349,11 +389,13 @@ namespace GraphLibyn
                                   EdgesAsNodes.Sum(e => Math.Pow(e.Item1.Degree, 2) + Math.Pow(e.Item2.Degree, 2)) -
                                   Math.Pow((1/M)*0.5*EdgesAsNodes.Sum(e => e.Item1.Degree + e.Item2.Degree), 2.0));
 
-            return numerator/denominator;
+            return _graphAssortativity2 = numerator/denominator;
         }
 
+        #region EDGE_SWAPPING_EXPERIMENT
         // This is experimental (for now at least), trying to see if we can swap edges and change assortativity while
-        // maintaining the degree vector
+        // maintaining the degree vector, really need to reorganize this part. Would move it to a new class that inherits
+        // from Graph, but I want to use it in ER and BA..
         public bool SwapRandomEdgesToIncreaseAssortativity()
         {
             Randomizer rand = new Randomizer();
@@ -564,8 +606,58 @@ namespace GraphLibyn
         // For edge swapping, define this measure of local assortativity, Min/Max s.t. the result will be between 0 and 1, 1 is the highest assortativity 
         private double LocalAssort(Tuple<Node, Node> edge)
             => (double)Math.Min(edge.Item1.Degree, edge.Item2.Degree)/Math.Max(edge.Item1.Degree, edge.Item2.Degree);
+        #endregion        
 
+        private double _sumOfAllNodesAvgDiffs = Double.NegativeInfinity;
+        public double SumOfAllNodesAvgDiffs
+        {
+            get
+            {
+                cacheIsEmpty = false;
+                return Double.IsNegativeInfinity(_sumOfAllNodesAvgDiffs)
+                    ? _sumOfAllNodesAvgDiffs = AllNodes.Sum(n => n.AvgDiffFromNeighbors)
+                    : _sumOfAllNodesAvgDiffs;
+            }
+        }
 
+        // For Thedchan's local assort, the graph needs this measure of Lambda:
+        private double _thedchansLambda = Double.NegativeInfinity;
+        public double ThedchansLambda
+        {
+            get
+            {
+                cacheIsEmpty = false;
+                return Double.IsNegativeInfinity(_thedchansLambda)
+                    ? _thedchansLambda = (GraphAssortativity + 1.0)/AllNodes.Count()
+                    : _thedchansLambda;
+            }
+        }
+
+        // A second measure we will use similar to Thedchan:
+        private double _sumOfAllFiMaxOverMin = Double.NegativeInfinity;
+        public double SumOfAllFiMaxOverMin
+        {
+            get
+            {
+                cacheIsEmpty = false;
+                return Double.IsNegativeInfinity(_sumOfAllFiMaxOverMin)
+                    ? _sumOfAllFiMaxOverMin = AllNodes.Sum(n => n.FiMaxOverMin)
+                    : _sumOfAllFiMaxOverMin;
+            }
+        }
+
+        // A third measure we will use similar to Thedchan:
+        private double _sumOfAllFiAbsoluteOfLn = Double.NegativeInfinity;
+        public double SumOfAllFiAbsoluteOfLn
+        {
+            get
+            {
+                cacheIsEmpty = false;
+                return Double.IsNegativeInfinity(_sumOfAllFiAbsoluteOfLn)
+                    ? _sumOfAllFiAbsoluteOfLn = AllNodes.Sum(n => n.FiAbsoluteOfLn)
+                    : _sumOfAllFiAbsoluteOfLn;
+            }
+        }
 
         /// <summary>
         /// Parse a graph from a string of lines (delimted by \n) in the form of N1\tN2
@@ -668,6 +760,26 @@ namespace GraphLibyn
         public Graph Clone()
         {
             return Clone(this);
+        }
+
+        public void SerializeToDisk(string filePath)
+        {
+            // Need to ignore loops because every node has a reference to the Graph
+            String graphJson = JsonConvert.SerializeObject(this, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore} );
+            File.WriteAllText(filePath, graphJson);
+        }
+
+        public static Graph DeserializeFromDisk(string filePath)
+        {
+            String graphJson = File.ReadAllText(filePath);
+            Graph graph = JsonConvert.DeserializeObject<Graph>(graphJson);
+            // The serialized object doesn't have the Graph property set so set it here
+            foreach (var node in graph.AllNodes)
+            {
+                ((GraphNode) node).SetGraph(graph);
+            }
+
+            return graph;
         }
 
     }

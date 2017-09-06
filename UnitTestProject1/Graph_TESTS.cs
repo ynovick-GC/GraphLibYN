@@ -21,7 +21,7 @@ namespace UnitTestProject1
         // For testing doubles, set the tolerance here
         private static readonly double Tolerance = 0.000005;
 
-        // A graph I dreamed up...
+        // A graph I dreamed up... (strange it didn't occur to me to add a cycle..)
         /****** GRAPH ******
          *    n1      n2
          *     \      /
@@ -251,8 +251,8 @@ namespace UnitTestProject1
             g.RemoveEdge("n3", "n1");
             var n1 = g.AllNodes.First(n => n.Id == "n1");
             var n3 = g.AllNodes.First(n => n.Id == "n3");
-            Assert.IsFalse(g.AllNodes.First(n => n.Id == "n1").Neighbors.Contains(g.AllNodes.First(n => n.Id == "n3")));
-            Assert.IsFalse(g.AllNodes.First(n => n.Id == "n3").Neighbors.Contains(g.AllNodes.First(n => n.Id == "n1")));
+            Assert.IsFalse(n1.Neighbors.Contains(n3));
+            Assert.IsFalse(n3.Neighbors.Contains(n1));
             Assert.AreEqual("1,1,2", String.Join(",", g.DegreeVector));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
@@ -489,10 +489,10 @@ namespace UnitTestProject1
                 true);
             TestGraphs.Add(graph);
 
-            Assert.AreEqual("0.5,0.5,2.0", String.Join(",", graph.FiVector.Select(d => d.ToString("0.0"))));
+            Assert.AreEqual("0.5,2.0,2.0", String.Join(",", graph.FiVector.Select(d => d.ToString("0.0"))));
 
             TestGraphs.Add(graph = Graph.ParseGraphFromTsvNodeNeighborsString(testGraphString1));
-            Assert.AreEqual("0.167,0.167,0.167,0.167,0.167,0.333,0.333,0.333,0.900,1.800,4.500",
+            Assert.AreEqual("0.222,0.556,1.111,3.000,3.000,3.000,6.000,6.000,6.000,6.000,6.000",
                 String.Join(",", graph.FiVector.Select(d => d.ToString("0.000"))));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
@@ -508,14 +508,14 @@ namespace UnitTestProject1
                 true);
             TestGraphs.Add(graph);
             graph.AddEdge("n2", "n4");
-            Assert.AreEqual("0.333,0.333,0.333,3.000", string.Join(",", graph.FiVector.Select(d => d.ToString("0.000"))));
+            Assert.AreEqual("0.333,3.000,3.000,3.000", string.Join(",", graph.FiVector.Select(d => d.ToString("0.000"))));
             graph.AddEdge("n4", "n1");
-            Assert.AreEqual("0.333,0.800,0.800,1.800", string.Join(",", graph.FiVector.Select(d => d.ToString("0.000"))));
+            Assert.AreEqual("0.556,1.250,1.250,3.000", string.Join(",", graph.FiVector.Select(d => d.ToString("0.000"))));
 
 
             TestGraphs.Add(graph = Graph.ParseGraphFromTsvNodeNeighborsString(testGraphString1));
             graph.AddEdge("n5", "n11");
-            Assert.AreEqual("0.167,0.167,0.167,0.167,0.250,0.333,0.333,0.400,1.333,1.500,3.600",
+            Assert.AreEqual("0.278,0.667,0.750,2.500,3.000,3.000,4.000,6.000,6.000,6.000,6.000",
                 string.Join(",", graph.FiVector.Select(d => d.ToString("0.000"))));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());

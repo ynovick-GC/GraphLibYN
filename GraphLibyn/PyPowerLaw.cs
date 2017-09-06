@@ -12,46 +12,51 @@ namespace GraphLibyn
     /* *** HACK ***
      * Using a python package to find Power Law alpha and sigma because I haven't found
      * an equivalent C# library and it looks difficult to write. Couldn't get it to work
-     * with a python engine for some reason, do just doing it with a Process. Yes, a 
+     * with a python engine for some reason, so just doing it with a Process. Yes, a 
      * terrible hack..
      */
 
-    public static class PyPowerLaw 
+    public static class PyPowerLaw
     {
-        public static bool TryPythonPowerLaw(IEnumerable<string> vals, out double alpha, out double sigma, int TimeOutInMillis = 10000) // need to make TimeOut a function of vals.Count at some point...
+        public static bool TryPythonPowerLaw(IEnumerable<string> vals, out double alpha, out double sigma,
+                bool discrete = true, int TimeOutInMillis = 10000)
+            // need to make TimeOut a function of vals.Count at some point...
         {
-            var BASE_DIR = @"D:\Data\AlphaCalculator\";
-
             bool success = false;
 
-            /* Clean up old files. Note that this is not thread safe
-            new DirectoryInfo(DIR).GetFiles("*.txt").ToList().ForEach(
-                f => File.Move(f.FullName, DIR + @"ARCHIVE\" + f.Name)
-                );*/
-
             object dtsLock = new object();
-
             string dts;
             lock (dtsLock)
             {
                 Thread.Sleep(200);
                 dts = DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.ffffff");
             }
-            Directory.CreateDirectory(BASE_DIR + dts + "\\");
-            string DIR = BASE_DIR + dts + "\\";
+            String DIR = Directory.GetCurrentDirectory() + "\\" + dts + "\\";
+            Directory.CreateDirectory(DIR);
+
             var valsFile = DIR + "vals_" + dts + ".txt";
             var alphaFile = DIR + "alpha_" + dts + ".txt";
             var sigmaFile = DIR + "sigma_" + dts + ".txt";
 
             File.WriteAllText(valsFile, String.Join("\n", vals));
 
+            string pyscript = "import powerlaw" + "\n" +
+                              "import numpy as np" + "\n" +
+                              $"f = open(r'{valsFile}')" + "\n" +
+                              "vals = np.array(f.read().split())" + "\n" +
+                              $"pl_results = powerlaw.Fit(vals, discrete = {(discrete ? "True" : "False")})" + "\n" +
+                              $"f = open(r'{alphaFile}', 'w')" + "\n" +
+                              "f.write(str(pl_results.power_law.alpha))" + "\n" +
+                              $"f = open(r'{sigmaFile}', 'w')" + "\n" +
+                              "f.write(str(pl_results.power_law.sigma))";
+            File.WriteAllText(DIR + "alphacalc.py", pyscript);
             Process p = new Process();
             p.StartInfo.FileName = @"C:\Users\ynovick\Anaconda2\python.exe";
-            p.StartInfo.Arguments = BASE_DIR + "alphacalc.py" + " " + valsFile + " " + alphaFile + " " + sigmaFile;
+            p.StartInfo.Arguments = DIR + "alphacalc.py";
             p.StartInfo.WorkingDirectory = DIR;
             p.StartInfo.CreateNoWindow = false;
             p.StartInfo.UseShellExecute = true;
-            
+
             p.Start();
             success = p.WaitForExit(TimeOutInMillis);
 

@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 namespace GraphLibyn
 {
     // YN 7/23/17 This is just an(other) experiment, to see what happens if we grow a graph
-    // by merging the ideas of 
+    // by merging the ideas of Barabasi Albert and Callaway to grow a graph both by adding vertices
+    // and by connecting existing ones
     public class BaCallawayGraph : BaGraph
     {
         private readonly int M2; // the number of existing nodes that will attach to new neighbors in a time step

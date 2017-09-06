@@ -36,6 +36,10 @@
     <Reference Include="DbContext">
       <HintPath>C:\Users\ynovick\Documents\Visual Studio 2015\Projects\InitializeDB_001\DbContext\bin\Debug\DbContext.dll</HintPath>
     </Reference>
+    <Reference Include="MathNet.Numerics, Version=3.20.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="MongoDB.Bson">
       <HintPath>C:\Users\ynovick\Documents\Visual Studio 2015\Projects\InitializeDB_001\DbContext\bin\Debug\MongoDB.Bson.dll</HintPath>
     </Reference>
@@ -63,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GraphLibyn\GraphLibyn.csproj">
