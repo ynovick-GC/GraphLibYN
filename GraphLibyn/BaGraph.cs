@@ -45,9 +45,6 @@ namespace GraphLibyn
 
         public void AddNodeToBaGraph()
         {
-            //AddNodeToBaGraph_WITH_OUTPUT();
-            //return;
-
             // Get list of nodes before new node is added
             var currNodes = _nodes.Values.ToList(); // we will choose M nodes from this list
 
@@ -74,13 +71,14 @@ namespace GraphLibyn
                         currNodes.Remove(selectedNode);
                         break;
                     }
-                    curr += n.Degree;
+                    curr += Math.Pow(n.Degree, Exp);
                 }
             }
         }
 
         public void AddNodeToBaGraph_WITH_OUTPUT()
         {
+            throw new Exception("This code is not trusted at the moment, can come back to it..");
             // Get list of nodes before new node is added
             var currNodes = _nodes.Values.ToList(); // we will choose M nodes from this list
 
@@ -129,7 +127,7 @@ namespace GraphLibyn
                         currNodes.Remove(selectedNode);
                         break;
                     }
-                    curr += n.Degree;
+                    curr += Math.Pow(n.Degree, Exp);
                 }
 
                 Console.ReadKey();

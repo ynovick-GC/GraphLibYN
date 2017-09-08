@@ -19,13 +19,13 @@ namespace GraphLibyn
             M2 = m2;
         }
 
-        public new void AddNodesToBaGraph(int numberOfNodes)
+        public new void AddNodesToBaCaGraphWithPreferentialAttachment(int numberOfNodes)
         {
             for (int i = 0; i < numberOfNodes; i++)
-                AddNodeToBaGraph();
+                AddNodeToBaCaGraphWithPreferentialAttachment();
         }
 
-        public new void AddNodeToBaGraph()
+        public void AddNodeToBaCaGraphWithPreferentialAttachment()
         {
             base.AddNodeToBaGraph(); // add a new node per the original algorithm
 
@@ -34,8 +34,28 @@ namespace GraphLibyn
             // now add edges to the existing graph
             for (int i = 0; i < M2; i++)
             {
-                GraphNode n1 = SelectNodeFromPool(currNodes);
-                GraphNode n2 = SelectNodeFromPool(currNodes);
+                GraphNode n1 = SelectNodeFromPoolWithPreferentialAttachment(currNodes);
+                GraphNode n2 = SelectNodeFromPoolWithPreferentialAttachment(currNodes);
+
+                n1.AddNeighbor(n2);
+            }
+        }
+
+        public void AddEdgesToBaCaBraphWithAssortativityBias(int numberOfEdges, bool positiveAssortativity = true)
+        {
+            for(int i = 0; i < numberOfEdges; i++)
+                AddEdgeToBaCaGraphWithAssortativityBias(positiveAssortativity);
+        }
+
+        public void AddEdgeToBaCaGraphWithAssortativityBias(bool positiveAssortativity = true)
+        {
+            base.AddNodeToBaGraph();
+            var currNodes = AllNodes.ToList();
+
+            for (int i = 0; i < M2; i++)
+            {
+                GraphNode n1 = SelectNodeFromPoolWithPreferentialAttachment(currNodes);
+                GraphNode n2 = SelectNodeFromPoolBasedOnAssortitivity(n1, currNodes, positiveAssortativity);
 
                 n1.AddNeighbor(n2);
             }
@@ -48,7 +68,7 @@ namespace GraphLibyn
 
         // For the second step of this algorithm we select one node at a time, immediately removing it from the pool and
         // recalculating, so there's no state to save, so a separate method makes sense
-        private GraphNode SelectNodeFromPool(List<Node> nodes, bool keepInPool = false)
+        private GraphNode SelectNodeFromPoolWithPreferentialAttachment(List<Node> nodes, bool keepInPool = false)
         {
             GraphNode selectedNode = null;
             
@@ -63,15 +83,42 @@ namespace GraphLibyn
             {
                 if (curr <= val && curr + Math.Pow(n.Degree, Exp) > val)
                 {
-                    selectedNode = (GraphNode)n;
+                    selectedNode = (GraphNode) n;
                     break;
                 }
-                curr += n.Degree;
+                curr += Math.Pow(n.Degree, Exp);
             }
 
             if (!keepInPool)
                 nodes.Remove(selectedNode);
 
+            return selectedNode;
+        }
+
+        private GraphNode SelectNodeFromPoolBasedOnAssortitivity(GraphNode firstNode, List<Node> remainingNodes, bool positiveAssortitivity = true)
+        {
+            GraphNode selectedNode = null;
+
+            // create a "pool" of the sum of all nodes' diff from the selected node
+            var maxDiff = remainingNodes.Max(n => Math.Abs(n.Degree - firstNode.Degree));
+            Func<Node, double> nodeValFunc = n => Math.Pow(positiveAssortitivity
+                ? maxDiff - (Math.Abs(n.Degree - firstNode.Degree) + 1)
+                : Math.Abs(n.Degree - firstNode.Degree) + 1, Exp);
+
+            var totalVals = remainingNodes.Sum(n => nodeValFunc(n));
+            double val = random.NextDouble()*totalVals;
+
+            double curr = 0;
+
+            foreach (var n in remainingNodes)
+            {
+                if (curr <= val && curr + nodeValFunc(n) > val)
+                {
+                    selectedNode = (GraphNode) n;
+                    break;
+                }
+                curr += nodeValFunc(n);
+            }
             return selectedNode;
         }
     }

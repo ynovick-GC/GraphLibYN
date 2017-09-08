@@ -1,71 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using DbContext;
 using GraphLibyn;
-using MathNet.Numerics.Distributions;
-using Newtonsoft.Json;
 
 namespace GraphStudy_Summer2017
 {
-    // YN 7/7/17 - Just some test code, will use this for analysis also
-    class ScratchPad_01
+    // Just a collection of one-time hack methods for testing or getting a quick result.
+    // When a functions turns out to be "useful" move it to the Analyses class to keep it
+    // a little more organized
+    public static class ScratchPad_001
     {
-        static Randomizer GlobalRand = new Randomizer();
-
-        static void Main(string[] args)
-        {
-            SaveStatsForGraph(args[0]);
-            Pause();
-        }
-
-        static void SaveStatsForGraph(String filePath)
-        {
-            StringBuilder stats = new StringBuilder();
-            StringBuilder vectors = new StringBuilder();
-            vectors.AppendLine("Id\tDegree\tFi\tLocalAssort");
-
-            var directory = filePath.Substring(0, filePath.LastIndexOf("\\") + 1);
-            var fileName = filePath.Substring(filePath.LastIndexOf("\\") + 1);
-
-            String fileContents = File.ReadAllText(filePath).Replace(",", "\t");
-            Graph graph = Graph.ParseGraphFromTsvEdgesString(fileContents);
-
-            var graphAssortativity = graph.GraphAssortativity;
-            double degAlpha, degSigma;
-            PyPowerLaw.TryPythonPowerLaw(graph.DegreeVector.Select(d => d.ToString()), out degAlpha, out degSigma, true);
-            double fiAlpha, fiSigma;
-            PyPowerLaw.TryPythonPowerLaw(graph.FiVector.Select(d => d.ToString()), out fiAlpha, out fiSigma, false);
-
-            stats.AppendLine($"Assortativity\t{graphAssortativity}");
-            stats.AppendLine($"Deg Alpha\t{degAlpha}");
-            stats.AppendLine($"Deg Sigma\t{degSigma}");
-            stats.AppendLine($"Fi Alpha\t{fiAlpha}");
-            stats.AppendLine($"Fi Sigma\t{fiSigma}");
-
-            graph.AllNodes.OrderBy(n => n.Degree).ToList().ForEach(
-                n => vectors.AppendLine($"{n.Id}\t{n.Degree}\t{n.FIndex}\t{n.ThedchansLocalAssort}")
-                );
-
-            File.WriteAllText(directory + "Stats.txt", stats.ToString());
-            File.WriteAllText(directory + "Vectors.txt", vectors.ToString());
-
-            //graph.SerializeToDisk(directory + "Graph.js");
-        }
-
-
-        static void Pause()
-        {
-            Console.WriteLine("\nAny key\n");
-            Console.ReadKey();
-        }
-
         static void GetGraphStatsForGraph_002()
         {
             String graphString =
@@ -129,7 +78,7 @@ namespace GraphStudy_Summer2017
         static void ThedchanExperiment2()
         {
             Graph graph = new Graph();
-            
+
             // Add one star with 4 leaves
             graph.AddEdge("Hub1", "L1a");
             graph.AddEdge("Hub1", "L1b");
@@ -353,14 +302,14 @@ namespace GraphStudy_Summer2017
         }
 
         // help methods to get StdDev, should test and move into GraphLibyn, or something
-        static double StdDevP(IEnumerable<int> values) => StdDevP(values.Select(v => (double) v));
-        static double StdDevP(IEnumerable<decimal> values) => StdDevP(values.Select(v => (double) v));
+        static double StdDevP(IEnumerable<int> values) => StdDevP(values.Select(v => (double)v));
+        static double StdDevP(IEnumerable<decimal> values) => StdDevP(values.Select(v => (double)v));
 
         static double StdDevP(IEnumerable<double> values)
         {
             var vals = values.ToList();
             var mu = vals.Average();
-            return vals.Sum(v => Math.Pow(v - mu, 2))/vals.Count();
+            return vals.Sum(v => Math.Pow(v - mu, 2)) / vals.Count();
         }
 
 
@@ -421,9 +370,9 @@ namespace GraphStudy_Summer2017
 
                 for (int j = 0; j < LIMIT; j++)
                 {
-                    if (j%10000 == 0)
+                    if (j % 10000 == 0)
                         Console.WriteLine($"Up to iteration {j} at {DateTime.Now.ToShortTimeString()}");
-                    int nextIndex = (int) (rand.NextDouble()*degrees.Count);
+                    int nextIndex = (int)(rand.NextDouble() * degrees.Count);
                     newDegrees.Add(degrees[nextIndex]);
                     newFis.Add(fis[nextIndex]);
                     degrees.RemoveAt(nextIndex);
@@ -500,54 +449,54 @@ namespace GraphStudy_Summer2017
             {
                 var dbName = database;
                 tasks.Add(Task.Factory.StartNew(() =>
+                {
+
+                    List<PaperVI> papersCollection = (dbName == DB.Databases.AcmAuthorshipData
+                        ? DB.AcmPapers
+                        : dbName == DB.Databases.ApsAuthorshipData ? DB.ApsPapers : DB.DblpPapers).ToList();
+
+                    Graph authorshipGraph = new Graph();
+                    int i = 0;
+                    foreach (var paper in papersCollection)
                     {
-
-                        List<PaperVI> papersCollection = (dbName == DB.Databases.AcmAuthorshipData
-                            ? DB.AcmPapers
-                            : dbName == DB.Databases.ApsAuthorshipData ? DB.ApsPapers : DB.DblpPapers).ToList();
-
-                        Graph authorshipGraph = new Graph();
-                        int i = 0;
-                        foreach (var paper in papersCollection)
-                        {
-                            if (++i%10000 == 0)
-                                lock (lockObject)
-                                {
-                                    Console.WriteLine(
-                                        $"{dbName} - Processing paper {i} of {papersCollection.Count} at {DateTime.Now.ToShortTimeString()}");
-                                }
-                            for (int auth1 = 0; auth1 < paper.AuthorIds.Count; auth1++)
-                                for (int auth2 = auth1 + 1; auth2 < paper.AuthorIds.Count; auth2++)
-                                {
-                                    if (paper.AuthorIds[auth1] == paper.AuthorIds[auth2])
-                                        continue;
-                                    authorshipGraph.AddEdge(paper.AuthorIds[auth1], paper.AuthorIds[auth2]);
-                                }
-                        }
-                        StringBuilder results = new StringBuilder();
-                        results.AppendLine($"{dbName} results");
-                        results.AppendLine($"Degree Vector\t" +
-                                           string.Join("\t",
-                                               authorshipGraph.AllNodes.OrderByDescending(n => n.Degree)
-                                                   .Select(n => n.Degree)));
-                        /*double alpha, sigma;
-                        PyPowerLaw.TryPythonPowerLaw(authorshipGraph.DegreeVector.Select(val => val.ToString()),
-                            out alpha,
-                            out sigma);
-                        results.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");*/
-                        results.AppendLine($"FI Vector\t" +
-                                           string.Join("\t",
-                                               authorshipGraph.AllNodes.OrderByDescending(n => n.Degree)
-                                                   .Select(n => n.FIndex)));
-                        /*PyPowerLaw.TryPythonPowerLaw(authorshipGraph.FiVector.Select(val => val.ToString()), out alpha,
-                            out sigma);
-                        results.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");*/
-                        results.AppendLine($"Assortativity\t{authorshipGraph.GraphAssortativity}");
-                        lock (lockObject)
-                        {
-                            allResults.AppendLine(results.ToString());
-                        }
+                        if (++i % 10000 == 0)
+                            lock (lockObject)
+                            {
+                                Console.WriteLine(
+                                    $"{dbName} - Processing paper {i} of {papersCollection.Count} at {DateTime.Now.ToShortTimeString()}");
+                            }
+                        for (int auth1 = 0; auth1 < paper.AuthorIds.Count; auth1++)
+                            for (int auth2 = auth1 + 1; auth2 < paper.AuthorIds.Count; auth2++)
+                            {
+                                if (paper.AuthorIds[auth1] == paper.AuthorIds[auth2])
+                                    continue;
+                                authorshipGraph.AddEdge(paper.AuthorIds[auth1], paper.AuthorIds[auth2]);
+                            }
                     }
+                    StringBuilder results = new StringBuilder();
+                    results.AppendLine($"{dbName} results");
+                    results.AppendLine($"Degree Vector\t" +
+                                       string.Join("\t",
+                                           authorshipGraph.AllNodes.OrderByDescending(n => n.Degree)
+                                               .Select(n => n.Degree)));
+                    /*double alpha, sigma;
+                    PyPowerLaw.TryPythonPowerLaw(authorshipGraph.DegreeVector.Select(val => val.ToString()),
+                        out alpha,
+                        out sigma);
+                    results.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");*/
+                    results.AppendLine($"FI Vector\t" +
+                                       string.Join("\t",
+                                           authorshipGraph.AllNodes.OrderByDescending(n => n.Degree)
+                                               .Select(n => n.FIndex)));
+                    /*PyPowerLaw.TryPythonPowerLaw(authorshipGraph.FiVector.Select(val => val.ToString()), out alpha,
+                        out sigma);
+                    results.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");*/
+                    results.AppendLine($"Assortativity\t{authorshipGraph.GraphAssortativity}");
+                    lock (lockObject)
+                    {
+                        allResults.AppendLine(results.ToString());
+                    }
+                }
                 ));
             }
             tasks.ForEach(t => t.Wait());
@@ -561,8 +510,8 @@ namespace GraphStudy_Summer2017
 
             for (int i = 0; i < 15000; i++)
             {
-                bacGraph.AddNodeToBaGraph();
-                if (i%50 == 0)
+                bacGraph.AddNodeToBaCaGraphWithPreferentialAttachment();
+                if (i % 50 == 0)
                 {
                     double alpha, sigma;
                     if (PyPowerLaw.TryPythonPowerLaw(bacGraph.DegreeVector.Select(d => d.ToString()), out alpha,
@@ -584,7 +533,7 @@ namespace GraphStudy_Summer2017
             var E = bag.Edges.Count();
             var V = bag.AllNodes.Count();
 
-            Console.WriteLine($"{E} edges of a possible {(V*(V - 1))/2} possible {(double) E/((V*(V - 1))/2)}");
+            Console.WriteLine($"{E} edges of a possible {(V * (V - 1)) / 2} possible {(double)E / ((V * (V - 1)) / 2)}");
         }
 
         static void TryErBaExperiment01()
@@ -614,7 +563,7 @@ namespace GraphStudy_Summer2017
                     Graph DecreasedAssortativity = graph.Clone();
                     DecreasedAssortativity.IterativelySwapEdgesToDecreaseAssortativity();
                     DecreasedAssortativity.IterativelySwapEdgesToDecreaseAssortativity();
-                        // needs a second time somtimes
+                    // needs a second time somtimes
 
                     sb.AppendLine(GraphVectorsSummaryForHistogram(graph, "Er Graph " + tmpI));
                     sb.AppendLine(GraphVectorsSummaryForHistogram(IncreasedAssortativity, "Er Graph+ " + tmpI));
@@ -645,7 +594,7 @@ namespace GraphStudy_Summer2017
                     Graph DecreasedAssortativity = graph.Clone();
                     DecreasedAssortativity.IterativelySwapEdgesToDecreaseAssortativity();
                     DecreasedAssortativity.IterativelySwapEdgesToDecreaseAssortativity();
-                        // needs a second time somtimes
+                    // needs a second time somtimes
 
                     sb.AppendLine(GraphVectorsSummaryForHistogram(graph, "Ba Graph " + tmpI));
                     sb.AppendLine(GraphVectorsSummaryForHistogram(IncreasedAssortativity, "Ba+ Graph " + tmpI));
@@ -834,7 +783,7 @@ namespace GraphStudy_Summer2017
             for (int i = 0; i <= 10000; i++)
             {
                 vals.Add(
-                    (int) (xmin*Math.Pow(1.0 - rand.NextDouble(), -1/(alpha - 1)))
+                    (int)(xmin * Math.Pow(1.0 - rand.NextDouble(), -1 / (alpha - 1)))
                 );
             }
 

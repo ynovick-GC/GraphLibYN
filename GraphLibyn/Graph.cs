@@ -762,25 +762,5 @@ namespace GraphLibyn
             return Clone(this);
         }
 
-        public void SerializeToDisk(string filePath)
-        {
-            // Need to ignore loops because every node has a reference to the Graph
-            String graphJson = JsonConvert.SerializeObject(this, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore} );
-            File.WriteAllText(filePath, graphJson);
-        }
-
-        public static Graph DeserializeFromDisk(string filePath)
-        {
-            String graphJson = File.ReadAllText(filePath);
-            Graph graph = JsonConvert.DeserializeObject<Graph>(graphJson);
-            // The serialized object doesn't have the Graph property set so set it here
-            foreach (var node in graph.AllNodes)
-            {
-                ((GraphNode) node).SetGraph(graph);
-            }
-
-            return graph;
-        }
-
     }
 }
