@@ -15,7 +15,7 @@ namespace UnitTestProject1
 
         private bool AllGraphsHaveNoZeroDegreeNodes()
         {
-            return TestGraphs.All(g => g.AllNodes.All(n => n.Degree > 0));
+            return TestGraphs.All(g => g.Nodes.All(n => n.Degree > 0));
         }
 
         // For testing doubles, set the tolerance here
@@ -60,22 +60,22 @@ namespace UnitTestProject1
             string graphString = "n1\tn2";
             Graph graph = Graph.ParseGraphFromTsvEdgesString(graphString);
             TestGraphs.Add(graph);
-            Assert.AreEqual(2, graph.AllNodes.Count());
-            Assert.IsTrue(graph.AllNodes.Any(n => n.Id == "n1") && graph.AllNodes.Any(n => n.Id == "n2"));
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
-                          graph.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1"));
-            Assert.IsTrue(graph.AllNodes.All(n => n.Degree == 1));
+            Assert.AreEqual(2, graph.Nodes.Count());
+            Assert.IsTrue(graph.Nodes.Any(n => n.Id == "n1") && graph.Nodes.Any(n => n.Id == "n2"));
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
+                          graph.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1"));
+            Assert.IsTrue(graph.Nodes.All(n => n.Degree == 1));
 
             // A graph n1 <--> n2 <--> n3
             graphString = "n1\tn2" + "\n" +
                           "n2\tn3";
             graph = Graph.ParseGraphFromTsvEdgesString(graphString);
             TestGraphs.Add(graph);
-            Assert.AreEqual(3, graph.AllNodes.Count());
-            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.AllNodes.Select(n => n.Id).OrderBy(s => s)));
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n1").Degree == 1 &&
-                          graph.AllNodes.First(n => n.Id == "n2").Degree == 2 &&
-                          graph.AllNodes.First(n => n.Id == "n3").Degree == 1);
+            Assert.AreEqual(3, graph.Nodes.Count());
+            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.Nodes.Select(n => n.Id).OrderBy(s => s)));
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n1").Degree == 1 &&
+                          graph.Nodes.First(n => n.Id == "n2").Degree == 2 &&
+                          graph.Nodes.First(n => n.Id == "n3").Degree == 1);
 
             // A triangle 
             graphString = "n1\tn2" + "\n" +
@@ -83,29 +83,29 @@ namespace UnitTestProject1
                           "n3\tn1";
             graph = Graph.ParseGraphFromTsvEdgesString(graphString);
             TestGraphs.Add(graph);
-            Assert.AreEqual(3, graph.AllNodes.Count());
-            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.AllNodes.Select(n => n.Id).OrderBy(s => s)));
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n1").Degree == 2 &&
-                          graph.AllNodes.First(n => n.Id == "n2").Degree == 2 &&
-                          graph.AllNodes.First(n => n.Id == "n3").Degree == 2);
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n3") &&
-                          graph.AllNodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n1"));
+            Assert.AreEqual(3, graph.Nodes.Count());
+            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.Nodes.Select(n => n.Id).OrderBy(s => s)));
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n1").Degree == 2 &&
+                          graph.Nodes.First(n => n.Id == "n2").Degree == 2 &&
+                          graph.Nodes.First(n => n.Id == "n3").Degree == 2);
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n3") &&
+                          graph.Nodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n1"));
 
             // n1<-->n2 n3<-->n4
             graphString = "n1\tn2" + "\n" +
                           "n4\tn3";
             graph = Graph.ParseGraphFromTsvEdgesString(graphString);
             TestGraphs.Add(graph);
-            Assert.AreEqual(4, graph.AllNodes.Count());
-            Assert.AreEqual("n1,n2,n3,n4", String.Join(",", graph.AllNodes.Select(n => n.Id).OrderBy(s => s)));
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n1").Degree == 1 &&
-                          graph.AllNodes.First(n => n.Id == "n2").Degree == 1 &&
-                          graph.AllNodes.First(n => n.Id == "n3").Degree == 1 &&
-                          graph.AllNodes.First(n => n.Id == "n4").Degree == 1);
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
-                          graph.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1"));
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n4") &&
-                          graph.AllNodes.First(n => n.Id == "n4").Neighbors.Any(n => n.Id == "n3"));
+            Assert.AreEqual(4, graph.Nodes.Count());
+            Assert.AreEqual("n1,n2,n3,n4", String.Join(",", graph.Nodes.Select(n => n.Id).OrderBy(s => s)));
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n1").Degree == 1 &&
+                          graph.Nodes.First(n => n.Id == "n2").Degree == 1 &&
+                          graph.Nodes.First(n => n.Id == "n3").Degree == 1 &&
+                          graph.Nodes.First(n => n.Id == "n4").Degree == 1);
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
+                          graph.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1"));
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n4") &&
+                          graph.Nodes.First(n => n.Id == "n4").Neighbors.Any(n => n.Id == "n3"));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
         }
@@ -118,7 +118,7 @@ namespace UnitTestProject1
                               "n2\tn3";
             var graph = Graph.ParseGraphFromTsvEdgesString(graphString);
             TestGraphs.Add(graph);
-            Assert.AreEqual("n1,n2,n3", string.Join(",", graph.AllNodes.Select(n => n.Id).OrderBy(s => s)));
+            Assert.AreEqual("n1,n2,n3", string.Join(",", graph.Nodes.Select(n => n.Id).OrderBy(s => s)));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
         }
@@ -132,21 +132,21 @@ namespace UnitTestProject1
                               "n3\tn2,n1";
             var graph = Graph.ParseGraphFromTsvNodeNeighborsString(graphString);
             TestGraphs.Add(graph);
-            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.AllNodes.Select(n => n.Id).OrderBy(s => s)));
-            Assert.IsTrue(graph.AllNodes.All(n => n.Degree == 2));
+            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.Nodes.Select(n => n.Id).OrderBy(s => s)));
+            Assert.IsTrue(graph.Nodes.All(n => n.Degree == 2));
 
             // n1 <--> n2 <--> n3
             graphString = "n1\tn2" + "\n" +
                           "n2\tn1,n3" + "\n" +
                           "n3\tn2";
             TestGraphs.Add(graph = Graph.ParseGraphFromTsvNodeNeighborsString(graphString));
-            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.AllNodes.Select(n => n.Id).OrderBy(s => s)));
-            Assert.AreEqual(2, graph.AllNodes.First(n => n.Id == "n2").Degree);
-            Assert.AreEqual(1, graph.AllNodes.First(n => n.Id == "n1").Degree);
-            Assert.AreEqual(1, graph.AllNodes.First(n => n.Id == "n3").Degree);
-            Assert.IsTrue(graph.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n3") &&
-                          graph.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1"));
-            Assert.IsFalse(graph.AllNodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n1"));
+            Assert.AreEqual("n1,n2,n3", String.Join(",", graph.Nodes.Select(n => n.Id).OrderBy(s => s)));
+            Assert.AreEqual(2, graph.Nodes.First(n => n.Id == "n2").Degree);
+            Assert.AreEqual(1, graph.Nodes.First(n => n.Id == "n1").Degree);
+            Assert.AreEqual(1, graph.Nodes.First(n => n.Id == "n3").Degree);
+            Assert.IsTrue(graph.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n3") &&
+                          graph.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1"));
+            Assert.IsFalse(graph.Nodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n1"));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
         }
@@ -160,7 +160,7 @@ namespace UnitTestProject1
                               "n3\tn2";
             var graph = Graph.ParseGraphFromTsvNodeNeighborsString(graphString);
             TestGraphs.Add(graph);
-            Assert.IsFalse(graph.AllNodes.Any(n => n.Id == "n4"));
+            Assert.IsFalse(graph.Nodes.Any(n => n.Id == "n4"));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
         }
@@ -187,8 +187,8 @@ namespace UnitTestProject1
 
             g.AddEdge("n1", "n2");
 
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
-                          g.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1")
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
+                          g.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1")
             );
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
@@ -202,8 +202,8 @@ namespace UnitTestProject1
 
             g.AddEdge("n1", "n2");
 
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
-                          g.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1")
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
+                          g.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1")
             );
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
@@ -218,8 +218,8 @@ namespace UnitTestProject1
             g.AddNode("n1");
             g.AddEdge("n1", "n2");
 
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
-                          g.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1")
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2") &&
+                          g.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n1")
             );
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
@@ -245,12 +245,12 @@ namespace UnitTestProject1
             g.AddEdge("n2", "n3");
             g.AddEdge("n3", "n1");
 
-            Assert.IsTrue(g.AllNodes.All(n => n.Degree == 2));
+            Assert.IsTrue(g.Nodes.All(n => n.Degree == 2));
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
 
             g.RemoveEdge("n3", "n1");
-            var n1 = g.AllNodes.First(n => n.Id == "n1");
-            var n3 = g.AllNodes.First(n => n.Id == "n3");
+            var n1 = g.Nodes.First(n => n.Id == "n1");
+            var n3 = g.Nodes.First(n => n.Id == "n3");
             Assert.IsFalse(n1.Neighbors.Contains(n3));
             Assert.IsFalse(n3.Neighbors.Contains(n1));
             Assert.AreEqual("1,1,2", String.Join(",", g.DegreeVector));
@@ -268,7 +268,7 @@ namespace UnitTestProject1
             g.AddEdge("n2", "n3");
             g.AddEdge("n3", "n1");
 
-            Assert.IsTrue(g.AllNodes.All(n => n.Degree == 2));
+            Assert.IsTrue(g.Nodes.All(n => n.Degree == 2));
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
 
             Assert.IsTrue(g.RemoveEdge("n3", "n1"));
@@ -359,7 +359,7 @@ namespace UnitTestProject1
         {
             Graph g = new Graph();
             g.AddNode("n1");
-            var b = g.AllNodes.Any();
+            var b = g.Nodes.Any();
         }
 
         [TestMethod]
@@ -371,7 +371,7 @@ namespace UnitTestProject1
             g.AddEdge("n1", "n2");
             g.AddEdge("n2", "n3");
             var e = g.Edges;
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2"),
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n1").Neighbors.Any(n => n.Id == "n2"),
                 "Accessing edges, then nodes failed");
 
             TestGraphs.Add(g = new Graph());
@@ -381,7 +381,7 @@ namespace UnitTestProject1
             e = g.Edges;
 
             g.AddEdge("n3", "n4");
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n4"),
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n4"),
                 "Accessing edges, changing, and accessing nodes failed");
 
             TestGraphs.Add(g = new Graph());
@@ -390,10 +390,10 @@ namespace UnitTestProject1
             g.AddEdge("n2", "n3");
 
             e = g.Edges;
-            var node = g.AllNodes.First();
+            var node = g.Nodes.First();
 
             g.AddEdge("n3", "n4");
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n4"),
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n4"),
                 "Accessing edges, then nodes, then changing, and then accessing nodes again failed");
 
 
@@ -408,7 +408,7 @@ namespace UnitTestProject1
 
             g.AddEdge("n1", "n2");
             g.AddEdge("n2", "n3");
-            var node = g.AllNodes.First();
+            var node = g.Nodes.First();
             Assert.IsTrue(g.Edges.Any(t => t.Item1 == "n1" && t.Item2 == "n2"),
                 "Accessing nodes, then edges failed");
 
@@ -416,7 +416,7 @@ namespace UnitTestProject1
             g.AddEdge("n1", "n2");
             g.AddEdge("n2", "n3");
 
-            node = g.AllNodes.First();
+            node = g.Nodes.First();
 
             g.AddEdge("n3", "n4");
             Assert.IsTrue(g.Edges.Any(t => t.Item1 == "n3" && t.Item2 == "n4"),
@@ -427,7 +427,7 @@ namespace UnitTestProject1
             g.AddEdge("n1", "n2");
             g.AddEdge("n2", "n3");
 
-            node = g.AllNodes.First();
+            node = g.Nodes.First();
             var e = g.Edges;
 
             g.AddEdge("n3", "n4");
@@ -688,8 +688,8 @@ namespace UnitTestProject1
             Dictionary<int, double> erGraphEdgeNodeProbability =
                 graph.Edges.SelectMany(t => new List<Node>
                 {
-                    graph.AllNodes.First(n => n.Id == t.Item1),
-                    graph.AllNodes.First(n => n.Id == t.Item2)
+                    graph.Nodes.First(n => n.Id == t.Item1),
+                    graph.Nodes.First(n => n.Id == t.Item2)
                 }).GroupBy(n => n.Degree).ToDictionary(g => g.Key, g => (double) g.Count()/(graph.Edges.Count()*2));
 
             Assert.IsTrue(

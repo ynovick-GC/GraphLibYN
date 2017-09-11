@@ -22,7 +22,7 @@ namespace GraphStudy_Summer2017
 
         static void Main(string[] args)
         {
-            Analyses.SaveStatsForGraph(args[0]);
+            ScratchPad_001.SanityTestsForBaCaGraphs();
             Pause();
         }
 

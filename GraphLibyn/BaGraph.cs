@@ -20,6 +20,7 @@ namespace GraphLibyn
 
         public BaGraph(int m, IRandomizer r, int startingNodes = 1, double exp = 1.0)
         {
+            throw new Exception("Deprecating this code, adding static factory methods to graph instead YN 9/10/17");
             M = m;
             random = r;
             Exp = exp;
@@ -28,7 +29,7 @@ namespace GraphLibyn
                 AddNode("n" + nextId++);
 
             // Get a list of these nodes before adding the next one
-            var existingNodes = _nodes.Values.ToList();
+            var existingNodes = _nodesDictionary.Values.ToList();
 
             // startingNodes is not precise, the graph will always start with m+1 nodes, then add startingNodes
             GraphNode firstStartingNode = NewGraphNode("n" + nextId++);
@@ -46,7 +47,7 @@ namespace GraphLibyn
         public void AddNodeToBaGraph()
         {
             // Get list of nodes before new node is added
-            var currNodes = _nodes.Values.ToList(); // we will choose M nodes from this list
+            var currNodes = _nodesDictionary.Values.ToList(); // we will choose M nodes from this list
 
             GraphNode newNode = NewGraphNode("n" + nextId++);
 
@@ -80,7 +81,7 @@ namespace GraphLibyn
         {
             throw new Exception("This code is not trusted at the moment, can come back to it..");
             // Get list of nodes before new node is added
-            var currNodes = _nodes.Values.ToList(); // we will choose M nodes from this list
+            var currNodes = _nodesDictionary.Values.ToList(); // we will choose M nodes from this list
 
             GraphNode newNode = NewGraphNode("n" + nextId++);
 

@@ -15,6 +15,152 @@ namespace GraphStudy_Summer2017
     // a little more organized
     public static class ScratchPad_001
     {
+        static Randomizer GlobalRand = new Randomizer();
+
+        // Just a sanity test to verify a few things about some graphs
+        // BA has pref attachment, ~0 assrt, rewiring for BA and ER raises or lowers assrt,
+        // BaCa graphs still have pref attachment and low or high assort as specified
+        public static void SanityTestsForBaCaGraphs()
+        {
+            /*
+            Graph graph = Graph.NewCallawayPrefAttachmentAssortativeGraph(500, (long) (500*500*0.5*0.02),
+                GlobalRand.NextRandomizer());
+            File.WriteAllText("outputfile.txt", string.Join("\r\n", graph.Edges.Select(e => "\"" + e.Item1 + "\" -- \"" + e.Item2 + "\"")));
+            */
+
+            Console.WriteLine($"Starting at: {DateTime.Now.ToShortTimeString()}");
+            List<Task> tasks = new List<Task>();
+
+            string bag1OrigAssrt = "N/A",
+                bag2OrigAssrt = "N/A",
+                bag1Alpha = "N/A",
+                bag1Sigma = "N/A",
+                bag2Alpha = "N/A",
+                bag2Sigma = "N/A",
+                bag1NewAssrt = "N/A",
+                bag2NewAssrt = "N/A",
+                erg1OrigAssrt = "N/A",
+                erg2OrigAssrt = "N/A",
+                erg1NewAssrt = "N/A",
+                erg2NewAssrt = "N/A",
+                bacg1OrigAssrt = "N/A",
+                bacg2OrigAssrt = "N/A",
+                bacg1Alpha = "N/A",
+                bacg1Sigma = "N/A",
+                bacg2Alpha = "N/A",
+                bacg2Sigma = "N/A";
+            
+            tasks.Add(Task.Factory.StartNew(
+                    () =>
+                    {
+                        Graph baGraph1 = Graph.NewBarabasiAlbertGraph(4000, 4, GlobalRand.NextRandomizer());
+                        bag1OrigAssrt = baGraph1.GraphAssortativity.ToString("0.0000");
+                        double tmpAlpha, tmpSigma;
+                        if (PyPowerLaw.TryPythonPowerLaw(baGraph1.DegreeVector.Select(d => d.ToString()), out tmpAlpha,
+                            out tmpSigma, false))
+                        {
+                            bag1Alpha = tmpAlpha.ToString("0.0000");
+                            bag1Sigma = tmpSigma.ToString("0.0000");
+                        }
+                        baGraph1.IterativelySwapEdgesToIncreaseAssortativity();
+                        bag1NewAssrt = baGraph1.GraphAssortativity.ToString("0.0000");
+                        Console.WriteLine($"BaGraph 1 finished : {DateTime.Now.ToShortTimeString()}");
+                    }
+                )
+            );
+
+            tasks.Add(Task.Factory.StartNew(
+                    () =>
+                    {
+                        Graph baGraph2 = Graph.NewBarabasiAlbertGraph(4000, 4, GlobalRand.NextRandomizer());
+                        bag2OrigAssrt = baGraph2.GraphAssortativity.ToString("0.0000");
+                        double tmpAlpha, tmpSigma;
+                        if (PyPowerLaw.TryPythonPowerLaw(baGraph2.DegreeVector.Select(d => d.ToString()), out tmpAlpha,
+                            out tmpSigma, false))
+                        {
+                            bag2Alpha = tmpAlpha.ToString("0.0000");
+                            bag2Sigma = tmpSigma.ToString("0.0000");
+                        }
+                        baGraph2.IterativelySwapEdgesToDecreaseAssortativity();
+                        bag2NewAssrt = baGraph2.GraphAssortativity.ToString("0.0000");
+                        Console.WriteLine($"BaGraph 2 finished : {DateTime.Now.ToShortTimeString()}");
+                    }
+                )
+            );
+
+            tasks.Add(Task.Factory.StartNew(
+                    () =>
+                    {
+                        Graph erGraph1 = Graph.NewErdosRenyiGraph(3000, 0.0015, GlobalRand.NextRandomizer());
+                        erg1OrigAssrt = erGraph1.GraphAssortativity.ToString("0.0000");
+                        erGraph1.IterativelySwapEdgesToIncreaseAssortativity();
+                        erg1NewAssrt = erGraph1.GraphAssortativity.ToString("0.0000");
+                        Console.WriteLine($"ErGraph 1 finished : {DateTime.Now.ToShortTimeString()}");
+                    }
+                )
+            );
+
+            tasks.Add(Task.Factory.StartNew(
+                    () =>
+                    {
+                        Graph erGraph2 = Graph.NewErdosRenyiGraph(3000, 0.0015, GlobalRand.NextRandomizer());
+                        erg2OrigAssrt = erGraph2.GraphAssortativity.ToString("0.0000");
+                        erGraph2.IterativelySwapEdgesToDecreaseAssortativity();
+                        erg2NewAssrt = erGraph2.GraphAssortativity.ToString("0.0000");
+                        Console.WriteLine($"ErGraph 2 finished : {DateTime.Now.ToShortTimeString()}");
+                    }
+                )
+            );
+            
+            tasks.Add(Task.Factory.StartNew(
+                    () =>
+                    {
+                        Graph baCallawayGraph1 = Graph.NewCallawayPrefAttachmentAssortativeGraph(6000,
+                            (long)(6000 * 6000 * 0.5 * 0.03), GlobalRand.NextRandomizer(), false);
+                        bacg1OrigAssrt = baCallawayGraph1.GraphAssortativity.ToString("0.0000");
+                        double tmpAlpha, tmpSigma;
+                        if (PyPowerLaw.TryPythonPowerLaw(baCallawayGraph1.DegreeVector.Select(d => d.ToString()),
+                            out tmpAlpha,
+                            out tmpSigma, false))
+                        {
+                            bacg1Alpha = tmpAlpha.ToString("0.0000");
+                            bacg1Sigma = tmpSigma.ToString("0.0000");
+                        }
+                        Console.WriteLine($"BaCall 1 finished : {DateTime.Now.ToShortTimeString()}");
+                    }
+                )
+            );
+            
+            tasks.Add(Task.Factory.StartNew(
+                    () =>
+                    {
+                        Graph baCallawayGraph2 = Graph.NewCallawayPrefAttachmentAssortativeGraph(6000,
+                            (long)(6000 * 6000 * 0.5 * 0.03), GlobalRand.NextRandomizer(), false);
+                        bacg2OrigAssrt = baCallawayGraph2.GraphAssortativity.ToString("0.0000");
+                        double tmpAlpha, tmpSigma;
+                        if (PyPowerLaw.TryPythonPowerLaw(baCallawayGraph2.DegreeVector.Select(d => d.ToString()),
+                            out tmpAlpha,
+                            out tmpSigma, false))
+                        {
+                            bacg2Alpha = tmpAlpha.ToString("0.0000");
+                            bacg2Sigma = tmpSigma.ToString("0.0000");
+                        }
+                        Console.WriteLine($"BaCall 2 finished : {DateTime.Now.ToShortTimeString()}");
+                    }
+                )
+            );
+
+            tasks.ForEach(t => t.Wait());
+
+            Console.WriteLine($"BaGraph1 orig assrt: {bag1OrigAssrt}, alpha: {bag1Alpha}, sigma: {bag1Sigma}, new assrt: {bag1NewAssrt}");
+            Console.WriteLine($"BaGraph2 orig assrt: {bag2OrigAssrt}, alpha: {bag2Alpha}, sigma: {bag2Sigma}, new assrt: {bag2NewAssrt}");
+            Console.WriteLine($"ErGraph1 orig assrt: {erg1OrigAssrt}, new assrt: {erg1NewAssrt}");
+            Console.WriteLine($"ErGraph2 orig assrt: {erg2OrigAssrt}, new assrt: {erg2NewAssrt}");
+            Console.WriteLine($"BaCaGraph1 assrt: {bacg1OrigAssrt}, alpha: {bacg1Alpha}, sigma: {bacg1Sigma}");
+            Console.WriteLine($"BaCaGraph2 assrt: {bacg2OrigAssrt}, alpha: {bacg2Alpha}, sigma: {bacg2Sigma}");
+            
+        }
+
         static void GetGraphStatsForGraph_002()
         {
             String graphString =
@@ -67,7 +213,7 @@ namespace GraphStudy_Summer2017
             StringBuilder results = new StringBuilder();
             results.AppendLine($"Assort\t{graph.GraphAssortativity}");
             results.AppendLine($"Degree\tFI\tLclAssrt");
-            graph.AllNodes.OrderBy(n => n.Degree).ToList().ForEach(
+            graph.Nodes.OrderBy(n => n.Degree).ToList().ForEach(
                 n => results.AppendLine($"{n.Degree.ToString("0.0000")}\t{n.FIndex.ToString("0.0000")}\t{n.ThedchansLocalAssort.ToString("0.0000")}")
                 );
             Console.WriteLine(results.ToString());
@@ -93,14 +239,14 @@ namespace GraphStudy_Summer2017
             graph.AddEdge("Hub2", "M2g");
             graph.AddEdge("Hub2", "M2h");
 
-            graph.AllNodes.Where(n => n.Id.StartsWith("M2")).ToList().ForEach(n =>
+            graph.Nodes.Where(n => n.Id.StartsWith("M2")).ToList().ForEach(n =>
             {
                 for (int i = 1; i <= 4; i++)
                     graph.AddEdge(n.Id, n.Id + "--N" + i);
             });
 
-            Node H1 = graph.AllNodes.First(n => n.Id == "Hub1");
-            Node H2 = graph.AllNodes.First(n => n.Id == "Hub2");
+            Node H1 = graph.Nodes.First(n => n.Id == "Hub1");
+            Node H2 = graph.Nodes.First(n => n.Id == "Hub2");
 
             Console.WriteLine($"H1: Lcl Assrt: {H1.ThedchansLocalAssort}, MxMn: {H1.ThedchanScaledFiMaxOverMin}, AbsLn: {H1.ThedchanScaledFiAbsoluteOfLn}");
             Console.WriteLine($"H2: Lcl Assrt: {H2.ThedchansLocalAssort}, MxMn: {H2.ThedchanScaledFiMaxOverMin}, AbsLn: {H2.ThedchanScaledFiAbsoluteOfLn}");
@@ -129,10 +275,10 @@ namespace GraphStudy_Summer2017
             star1.AddEdge("n2e", "n2f");
             star1.AddEdge("n2g", "n2h");
 
-            Node h1 = star1.AllNodes.First(n => n.Id == "Hub1");
-            Node h2 = star1.AllNodes.First(n => n.Id == "Hub2");
-            Node n1 = star1.AllNodes.First(n => n.Id.StartsWith("n1"));
-            Node n2 = star1.AllNodes.First(n => n.Id.StartsWith("n2"));
+            Node h1 = star1.Nodes.First(n => n.Id == "Hub1");
+            Node h2 = star1.Nodes.First(n => n.Id == "Hub2");
+            Node n1 = star1.Nodes.First(n => n.Id.StartsWith("n1"));
+            Node n2 = star1.Nodes.First(n => n.Id.StartsWith("n2"));
 
             Console.WriteLine($"H1: Lcl Assrt: {h1.ThedchansLocalAssort}, MxMn: {h1.ThedchanScaledFiMaxOverMin}, AbsLn: {h1.ThedchanScaledFiAbsoluteOfLn}");
             Console.WriteLine($"H2: Lcl Assrt: {h2.ThedchansLocalAssort}, MxMn: {h2.ThedchanScaledFiMaxOverMin}, AbsLn: {h2.ThedchanScaledFiAbsoluteOfLn}");
@@ -183,7 +329,7 @@ namespace GraphStudy_Summer2017
 
             Graph graph = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
             Console.WriteLine($"Graph Assort: {graph.GraphAssortativity} and {graph.GraphAssortativity2()}, Thedchan's lambda: {graph.ThedchansLambda}");
-            var nodes = graph.AllNodes.GroupBy(n => n.Id[0]).Select(g => g.First());
+            var nodes = graph.Nodes.GroupBy(n => n.Id[0]).Select(g => g.First());
             foreach (var n in nodes)
             {
                 var thedChanAssort = n.ThedchansLocalAssort;
@@ -404,7 +550,7 @@ namespace GraphStudy_Summer2017
                     .ForEach(n => chessGraph.AddEdge(user, n));
             }
 
-            var maxDeg = chessGraph.AllNodes.Where(n => n.Degree > 10000);
+            var maxDeg = chessGraph.Nodes.Where(n => n.Degree > 10000);
 
             maxDeg.Select(n => n.Id + "\t" + n.Degree).ToList().ForEach(Console.WriteLine);
 
@@ -413,7 +559,7 @@ namespace GraphStudy_Summer2017
             results.AppendLine($"Chess results");
             results.AppendLine($"Degree Vector\t" +
                                string.Join("\t",
-                                   chessGraph.AllNodes.OrderByDescending(n => n.Degree)
+                                   chessGraph.Nodes.OrderByDescending(n => n.Degree)
                                        .Select(n => n.Degree)));
             double alpha, sigma;
             PyPowerLaw.TryPythonPowerLaw(chessGraph.DegreeVector.Select(val => val.ToString()),
@@ -422,7 +568,7 @@ namespace GraphStudy_Summer2017
             results.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");
             results.AppendLine($"FI Vector\t" +
                                string.Join("\t",
-                                   chessGraph.AllNodes.OrderByDescending(n => n.Degree)
+                                   chessGraph.Nodes.OrderByDescending(n => n.Degree)
                                        .Select(n => n.FIndex)));
             PyPowerLaw.TryPythonPowerLaw(chessGraph.FiVector.Select(val => val.ToString()), out alpha,
                 out sigma);
@@ -477,7 +623,7 @@ namespace GraphStudy_Summer2017
                     results.AppendLine($"{dbName} results");
                     results.AppendLine($"Degree Vector\t" +
                                        string.Join("\t",
-                                           authorshipGraph.AllNodes.OrderByDescending(n => n.Degree)
+                                           authorshipGraph.Nodes.OrderByDescending(n => n.Degree)
                                                .Select(n => n.Degree)));
                     /*double alpha, sigma;
                     PyPowerLaw.TryPythonPowerLaw(authorshipGraph.DegreeVector.Select(val => val.ToString()),
@@ -486,7 +632,7 @@ namespace GraphStudy_Summer2017
                     results.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");*/
                     results.AppendLine($"FI Vector\t" +
                                        string.Join("\t",
-                                           authorshipGraph.AllNodes.OrderByDescending(n => n.Degree)
+                                           authorshipGraph.Nodes.OrderByDescending(n => n.Degree)
                                                .Select(n => n.FIndex)));
                     /*PyPowerLaw.TryPythonPowerLaw(authorshipGraph.FiVector.Select(val => val.ToString()), out alpha,
                         out sigma);
@@ -531,7 +677,7 @@ namespace GraphStudy_Summer2017
         {
             BaGraph bag = new BaGraph(13, new Randomizer(), 8000);
             var E = bag.Edges.Count();
-            var V = bag.AllNodes.Count();
+            var V = bag.Nodes.Count();
 
             Console.WriteLine($"{E} edges of a possible {(V * (V - 1)) / 2} possible {(double)E / ((V * (V - 1)) / 2)}");
         }
@@ -617,11 +763,11 @@ namespace GraphStudy_Summer2017
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(title);
             sb.AppendLine("Degree Vector\t" +
-                          string.Join("\t", g.AllNodes.OrderByDescending(n => n.Degree).Select(n => n.Degree)));
+                          string.Join("\t", g.Nodes.OrderByDescending(n => n.Degree).Select(n => n.Degree)));
             PyPowerLaw.TryPythonPowerLaw(g.DegreeVector.Select(v => v.ToString()), out alpha, out sigma);
             sb.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");
             sb.AppendLine("FI Vector\t" +
-                          string.Join("\t", g.AllNodes.OrderByDescending(n => n.Degree).Select(n => n.FIndex)));
+                          string.Join("\t", g.Nodes.OrderByDescending(n => n.Degree).Select(n => n.FIndex)));
             PyPowerLaw.TryPythonPowerLaw(g.FiVector.Select(v => v.ToString()), out alpha, out sigma);
             sb.AppendLine($"Alpha\t{alpha}\tSigma\t{sigma}");
             sb.AppendLine($"Assortativity: {g.GraphAssortativity}");
@@ -756,7 +902,7 @@ namespace GraphStudy_Summer2017
                         double alpha;
                         double sigma;
 
-                        PyPowerLaw.TryPythonPowerLaw(bag.AllNodes.Select(d => d.Degree.ToString()), out alpha, out sigma);
+                        PyPowerLaw.TryPythonPowerLaw(bag.Nodes.Select(d => d.Degree.ToString()), out alpha, out sigma);
                         string result = $"dval:\t{tmpDval}\t{tmpI})\tAlpha:\t{alpha}\tsigma:\t{sigma}";
                         lock (resultsLock)
                         {
@@ -794,7 +940,7 @@ namespace GraphStudy_Summer2017
         static void TestBaGraph()
         {
             BaGraph baGraph = new BaGraph(5, new Randomizer(), 500, 0.9);
-            var groups = baGraph.AllNodes.GroupBy(n => n.Degree).OrderBy(g => g.Key);
+            var groups = baGraph.Nodes.GroupBy(n => n.Degree).OrderBy(g => g.Key);
             foreach (var g in groups)
             {
                 Console.WriteLine(g.Key + ": " + g.Count());
@@ -807,7 +953,7 @@ namespace GraphStudy_Summer2017
         {
             Console.WriteLine("\n****************\n");
             ErGraph erg = new ErGraph(500, 0.25, new Randomizer());
-            var groups = erg.AllNodes.GroupBy(n => n.Degree).OrderBy(g => g.Key);
+            var groups = erg.Nodes.GroupBy(n => n.Degree).OrderBy(g => g.Key);
             foreach (var g in groups)
             {
                 Console.WriteLine(g.Key + ": " + g.Count());

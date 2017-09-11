@@ -309,7 +309,7 @@ namespace UnitTestProject1
             g.AddEdge("n", "n3");
             g.AddEdge("n", "n4");
 
-            var n = g.AllNodes.First(nd => nd.Id == "n");
+            var n = g.Nodes.First(nd => nd.Id == "n");
 
             Assert.AreEqual(1.0, n.AvgOfNeighborsDegree, Tolerance);
 
@@ -389,7 +389,7 @@ namespace UnitTestProject1
         public void AverageDiffFromNeighborsIsCorrect()
         {
             Graph g = Graph.ParseGraphFromTsvEdgesString(ThedchanGraphExampleString);
-            Assert.AreEqual(2.2, g.AllNodes.First(n => n.Id == "v").AvgDiffFromNeighbors, Tolerance);
+            Assert.AreEqual(2.2, g.Nodes.First(n => n.Id == "v").AvgDiffFromNeighbors, Tolerance);
         }
 
         [TestMethod]
@@ -398,7 +398,7 @@ namespace UnitTestProject1
             // Take the example from the paper, a vertex with neighbors of degree 1, 2, 3, 4, 6
             Graph g = Graph.ParseGraphFromTsvEdgesString(ThedchanGraphExampleString);
 
-            Node v = g.AllNodes.First(n => n.Id == "v");
+            Node v = g.Nodes.First(n => n.Id == "v");
             Assert.AreEqual(2.2, v.AvgDiffFromNeighbors, Tolerance);
 
             g.AddEdge("v6", "v6n7");
@@ -414,7 +414,7 @@ namespace UnitTestProject1
         public void AverageDiffFromNeighborsAsFractionIsCorrect()
         {
             Graph g = Graph.ParseGraphFromTsvEdgesString(ThedchanGraphExampleString);
-            Assert.AreEqual(0.039262344, g.AllNodes.First(n => n.Id == "v").AvgDiffFromNeighborsAsFractionOfTotal,
+            Assert.AreEqual(0.039262344, g.Nodes.First(n => n.Id == "v").AvgDiffFromNeighborsAsFractionOfTotal,
                 Tolerance);
         }
 
@@ -423,7 +423,7 @@ namespace UnitTestProject1
         {
             Graph g = Graph.ParseGraphFromTsvEdgesString(ThedchanGraphExampleString);
 
-            Node v = g.AllNodes.First(n => n.Id == "v");
+            Node v = g.Nodes.First(n => n.Id == "v");
             Assert.AreEqual(0.039262344, v.AvgDiffFromNeighborsAsFractionOfTotal, Tolerance);
 
             g.AddEdge("v6", "v6n7");
@@ -443,7 +443,7 @@ namespace UnitTestProject1
             g.AddEdge("v", "v2");
             g.AddEdge("v", "v3");
             g.AddEdge("v", "v4");
-            Assert.IsTrue(g.AllNodes.All(n => n.ThedchansLocalAssort < 0));
+            Assert.IsTrue(g.Nodes.All(n => n.ThedchansLocalAssort < 0));
         }
 
         [TestMethod]
@@ -461,7 +461,7 @@ namespace UnitTestProject1
             g.AddEdge("v2", "v2D");
 
             g.AddEdge("out1", "out2");
-            Assert.IsTrue(g.AllNodes.Any(n => n.ThedchansLocalAssort >= 0));
+            Assert.IsTrue(g.Nodes.Any(n => n.ThedchansLocalAssort >= 0));
         }
 
         // This is a sample graph from the Thedchan paper
@@ -504,9 +504,9 @@ namespace UnitTestProject1
         {
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
-            Assert.IsTrue(g.AllNodes.Where(n => n.Id.StartsWith("L")).All(n => Math.Abs(n.AvgDiffFromNeighbors - 2.0) < Tolerance));
-            Assert.IsTrue(g.AllNodes.Where(n => n.Id.StartsWith("M")).All(n => Math.Abs(n.AvgDiffFromNeighbors - 2.66666666666666) < Tolerance));
-            Assert.IsTrue(g.AllNodes.Where(n => n.Id.StartsWith("H")).All(n => Math.Abs(n.AvgDiffFromNeighbors - 0.571428571) < Tolerance));
+            Assert.IsTrue(g.Nodes.Where(n => n.Id.StartsWith("L")).All(n => Math.Abs(n.AvgDiffFromNeighbors - 2.0) < Tolerance));
+            Assert.IsTrue(g.Nodes.Where(n => n.Id.StartsWith("M")).All(n => Math.Abs(n.AvgDiffFromNeighbors - 2.66666666666666) < Tolerance));
+            Assert.IsTrue(g.Nodes.Where(n => n.Id.StartsWith("H")).All(n => Math.Abs(n.AvgDiffFromNeighbors - 0.571428571) < Tolerance));
         }
 
         [TestMethod]
@@ -515,13 +515,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.AvgDiffFromNeighborsAsFractionOfTotal - 0.034539474) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.AvgDiffFromNeighborsAsFractionOfTotal - 0.046052632) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.AvgDiffFromNeighborsAsFractionOfTotal - 0.009868421) < Tolerance));
         }
 
@@ -531,13 +531,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.ThedchansLocalAssort - 0.01754386) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.ThedchansLocalAssort - 0.006030702) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.ThedchansLocalAssort - 0.042214912) < Tolerance));
         }
 
@@ -547,13 +547,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.FiMaxOverMin - 3.0) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.FiMaxOverMin - 2.7777777777777) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.FiMaxOverMin - 1.19047619) < Tolerance));
         }
 
@@ -563,13 +563,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
  
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.FiMaxOverMinAsFractionOfTotal - 0.037619427) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.FiMaxOverMinAsFractionOfTotal - 0.034832803) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.FiMaxOverMinAsFractionOfTotal - 0.014928344) < Tolerance));
         }
 
@@ -579,13 +579,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.ThedchanScaledFiMaxOverMin - 0.014463907) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.ThedchanScaledFiMaxOverMin - 0.017250531) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.ThedchanScaledFiMaxOverMin - 0.037154989) < Tolerance));
         }
 
@@ -595,13 +595,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.FiAbsoluteOfLn - 1.098612289) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.FiAbsoluteOfLn - 1.014840813) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.FiAbsoluteOfLn - 0.121042551) < Tolerance));
         }
 
@@ -611,13 +611,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.FiAbsoluteOfLnAsFractionOfTotal - 0.041200747) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.FiAbsoluteOfLnAsFractionOfTotal - 0.038059104) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.FiAbsoluteOfLnAsFractionOfTotal - 0.004539403) < Tolerance));
         }
 
@@ -627,13 +627,13 @@ namespace UnitTestProject1
             Graph g = Graph.ParseGraphFromTsvNodeNeighborsString(thedchanSampleGraphString);
 
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("L"))
+                g.Nodes.Where(n => n.Id.StartsWith("L"))
                     .All(n => Math.Abs(n.ThedchanScaledFiAbsoluteOfLn - 0.010882587) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("M"))
+                g.Nodes.Where(n => n.Id.StartsWith("M"))
                     .All(n => Math.Abs(n.ThedchanScaledFiAbsoluteOfLn - 0.014024229) < Tolerance));
             Assert.IsTrue(
-                g.AllNodes.Where(n => n.Id.StartsWith("H"))
+                g.Nodes.Where(n => n.Id.StartsWith("H"))
                     .All(n => Math.Abs(n.ThedchanScaledFiAbsoluteOfLn - 0.047543931) < Tolerance));
         }
     }

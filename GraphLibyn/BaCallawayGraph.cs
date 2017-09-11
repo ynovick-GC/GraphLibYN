@@ -16,6 +16,7 @@ namespace GraphLibyn
         public BaCallawayGraph(int m1, int m2, IRandomizer r, int startingNodes = 1, double exp = 1.0)
             : base(m1, r, startingNodes, exp)
         {
+            throw new Exception("Deprecating this code, adding static factory methods to graph instead YN 9/10/17");
             M2 = m2;
         }
 
@@ -29,11 +30,12 @@ namespace GraphLibyn
         {
             base.AddNodeToBaGraph(); // add a new node per the original algorithm
 
-            var currNodes = AllNodes.ToList();
+
 
             // now add edges to the existing graph
             for (int i = 0; i < M2; i++)
             {
+                var currNodes = Nodes.ToList();
                 GraphNode n1 = SelectNodeFromPoolWithPreferentialAttachment(currNodes);
                 GraphNode n2 = SelectNodeFromPoolWithPreferentialAttachment(currNodes);
 
@@ -50,7 +52,7 @@ namespace GraphLibyn
         public void AddEdgeToBaCaGraphWithAssortativityBias(bool positiveAssortativity = true)
         {
             base.AddNodeToBaGraph();
-            var currNodes = AllNodes.ToList();
+            var currNodes = Nodes.ToList();
 
             for (int i = 0; i < M2; i++)
             {

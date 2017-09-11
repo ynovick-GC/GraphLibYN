@@ -40,7 +40,7 @@ namespace GraphStudy_Summer2017
             stats.AppendLine($"Fi Alpha\t{fiAlpha}");
             stats.AppendLine($"Fi Sigma\t{fiSigma}");
 
-            graph.AllNodes.OrderBy(n => n.Degree).ToList().ForEach(
+            graph.Nodes.OrderBy(n => n.Degree).ToList().ForEach(
                 n => vectors.AppendLine($"{n.Id}\t{n.Degree}\t{n.FIndex}\t{n.ThedchansLocalAssort}")
                 );
 

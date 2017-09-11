@@ -21,7 +21,7 @@ namespace UnitTestProject1
 
         private bool AllGraphsHaveNoZeroDegreeNodes()
         {
-            return TestGraphs.All(g => g.AllNodes.All(n => n.Degree > 0));
+            return TestGraphs.All(g => g.Nodes.All(n => n.Degree > 0));
         }
 
         [TestMethod]
@@ -34,8 +34,8 @@ namespace UnitTestProject1
             g.AddEdge("n1", "n2");
             g.AddEdge("n2", "n3");
             
-            g.AddEdge(g.AllNodes.First(n => n.Id == "n1"), g.AllNodes.First(n => n.Id == "n3"));
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n1"));
+            g.AddEdge(g.Nodes.First(n => n.Id == "n1"), g.Nodes.First(n => n.Id == "n3"));
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n3").Neighbors.Any(n => n.Id == "n1"));
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
         }
@@ -50,14 +50,14 @@ namespace UnitTestProject1
             g.AddEdge("n2", "n3");
 
             Node n4 = new Node("n4", g);
-            g.AddEdge(n4, g.AllNodes.First(n => n.Id == "n2"), true);
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n4"),
+            g.AddEdge(n4, g.Nodes.First(n => n.Id == "n2"), true);
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n2").Neighbors.Any(n => n.Id == "n4"),
                 "Connecting one existing node with one new one failed.");
 
             Node n5 = new Node("n5", g);
             Node n6 = new Node("n6", g);
             g.AddEdge(n5, n6, true);
-            Assert.IsTrue(g.AllNodes.First(n => n.Id == "n5").Neighbors.Any(n => n.Id == "n6"),
+            Assert.IsTrue(g.Nodes.First(n => n.Id == "n5").Neighbors.Any(n => n.Id == "n6"),
                 "Connecting two new nodes and adding to graph failed.");
 
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
@@ -73,7 +73,7 @@ namespace UnitTestProject1
             g.AddEdge("n2", "n3");
 
             GraphNode n4 = NewGraphNode("n4");
-            g.AddEdge(n4, g.AllNodes.First(n => n.Id == "n3"), false);
+            g.AddEdge(n4, g.Nodes.First(n => n.Id == "n3"), false);
         }
 
         [TestMethod]
@@ -86,15 +86,15 @@ namespace UnitTestProject1
             graph.AddEdge("n2", "n3", true);
             graph.AddEdge("n1", "n3");
 
-            Assert.IsTrue(graph.AllNodes.All(n => n.Degree == 2));
+            Assert.IsTrue(graph.Nodes.All(n => n.Degree == 2));
 
-            Node n1 = graph.AllNodes.First(n => n.Id == "n1");
-            Node n2 = graph.AllNodes.First(n => n.Id == "n2");
-            Node n3 = graph.AllNodes.First(n => n.Id == "n3");
+            Node n1 = graph.Nodes.First(n => n.Id == "n1");
+            Node n2 = graph.Nodes.First(n => n.Id == "n2");
+            Node n3 = graph.Nodes.First(n => n.Id == "n3");
 
             graph.RemoveEdge(n1, n3);
 
-            Assert.AreEqual("1,1,2", String.Join(",", graph.AllNodes.Select(n => n.Degree).OrderBy(n => n)));
+            Assert.AreEqual("1,1,2", String.Join(",", graph.Nodes.Select(n => n.Degree).OrderBy(n => n)));
             Assert.IsTrue(AllGraphsHaveNoZeroDegreeNodes());
         }
 
@@ -109,7 +109,7 @@ namespace UnitTestProject1
 
             graph.AddEdge(n1, n2);
 
-            Assert.IsTrue(graph.AllNodes.All(n => n.Degree == 1));
+            Assert.IsTrue(graph.Nodes.All(n => n.Degree == 1));
 
             Assert.IsTrue(graph.RemoveEdge(n1, n2));
             Assert.IsFalse(graph.RemoveEdge(n1, n2));

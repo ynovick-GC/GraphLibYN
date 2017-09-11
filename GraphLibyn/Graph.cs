@@ -26,10 +26,10 @@ namespace GraphLibyn
             // ensure that any GraphNode that is created is part of a graph
             public static GraphNode NewGraphNode(string id, Graph graph)
             {
-                if (graph._nodes.ContainsKey(id))
+                if (graph._nodesDictionary.ContainsKey(id))
                     throw new GraphCreationException("Id is already present, perhaps with 0 degree.");
                 GraphNode graphNode = new GraphNode(id, graph);
-                graph._nodes[id] = graphNode;
+                graph._nodesDictionary[id] = graphNode;
                 return graphNode;
             }
 
@@ -60,7 +60,7 @@ namespace GraphLibyn
         {
             if (!cacheIsEmpty)
             {
-                _allNodes = null;
+                _nodes = null;
                 _allEdgesAsNodes = null;
                 _degreeVector = null;
                 _fiVector = null;
@@ -78,27 +78,31 @@ namespace GraphLibyn
                 // Design decision, it's too hard to differntiate between the node values that affect only themselves
                 // and those that affect other nodes (and how many hops away, etc.) so any time the graph is dirty we
                 // will force all node values to be reset as well
-                AllNodes.ToList().ForEach(n => ((GraphNode) n).ResetCache());
+                _nodesDictionary.Values.ToList().ForEach(n => ((GraphNode) n).ResetCache());
             }
             cacheIsEmpty = true;
         }
 
-        protected Dictionary<string, GraphNode> _nodes = new Dictionary<string, GraphNode>();
-        private IEnumerable<GraphNode> _allNodes = null;
-        public IEnumerable<Node> AllNodes
+        protected Dictionary<string, GraphNode> _nodesDictionary = new Dictionary<string, GraphNode>();
+        private IEnumerable<GraphNode> _nodes = null;
+        /// <summary>
+        /// Collection of all nodes except zero degree
+        /// </summary>
+        public IEnumerable<Node> Nodes
         {
             get
             {
                 cacheIsEmpty = false;
-                if (_allNodes == null)
+                if (_nodes == null)
                 {
-                    if(!_nodes.Any(kvp => kvp.Value.Degree > 0))
+                    if(!_nodesDictionary.Any(kvp => kvp.Value.Degree > 0))
                         throw new EmptyGraphException("Graph is empty, possibly contains only 0 degree nodes");
-                    _allNodes = _nodes.Values.Where(n => n.Degree > 0);
+                    _nodes = _nodesDictionary.Values.Where(n => n.Degree > 0);
                 }
-                return _allNodes;
+                return _nodes;
             }
         }
+
 
         // For internal use, can get all edges as Tuples of Node,Node
         private List<Tuple<Node, Node>> _allEdgesAsNodes = null;
@@ -107,7 +111,7 @@ namespace GraphLibyn
             get
             {
                 cacheIsEmpty = false;
-                return _allEdgesAsNodes ?? (_allEdgesAsNodes = AllNodes.SelectMany(n => n.Neighbors.Select(n2 =>
+                return _allEdgesAsNodes ?? (_allEdgesAsNodes = Nodes.SelectMany(n => n.Neighbors.Select(n2 =>
                                n.Id.CompareTo(n2.Id) < 0
                                    ? new Tuple<Node, Node>(n, n2)
                                    : new Tuple<Node, Node>(n2, n)))
@@ -123,7 +127,7 @@ namespace GraphLibyn
 
         public bool AddNode(string Id)
         {
-            if (_nodes.ContainsKey(Id))
+            if (_nodesDictionary.ContainsKey(Id))
                 return false;
             NewGraphNode(Id);
             
@@ -140,18 +144,18 @@ namespace GraphLibyn
             var n1 = (GraphNode) node1;
             var n2 = (GraphNode) node2;
 
-            if(!addNodesToGraphIfAbsent && (!_nodes.Values.Contains(n1) || !_nodes.Values.Contains(n2)))
+            if(!addNodesToGraphIfAbsent && (!_nodesDictionary.Values.Contains(n1) || !_nodesDictionary.Values.Contains(n2)))
                 throw new GraphCreationException("Call to protected AddEdge(Node n1, Node n2) with nodes absent from graph");
 
             bool changeMade = false;
-            if (!_nodes.ContainsKey(n1.Id))
+            if (!_nodesDictionary.ContainsKey(n1.Id))
             {
-                _nodes[n1.Id] = n1;
+                _nodesDictionary[n1.Id] = n1;
                 changeMade = true;
             }
-            if (!_nodes.ContainsKey(n2.Id))
+            if (!_nodesDictionary.ContainsKey(n2.Id))
             {
-                _nodes[n2.Id] = n2;
+                _nodesDictionary[n2.Id] = n2;
                 changeMade = true;
             }
             if (n1.AddNeighbor(n2))
@@ -165,13 +169,13 @@ namespace GraphLibyn
 
         public bool AddEdge(string id1, string id2, bool addNodeIfNotFound = true)
         {
-            if (_nodes.ContainsKey(id1) && _nodes.ContainsKey(id2) && _nodes[id1].Neighbors.Any(n => n.Id == id2))
+            if (_nodesDictionary.ContainsKey(id1) && _nodesDictionary.ContainsKey(id2) && _nodesDictionary[id1].Neighbors.Any(n => n.Id == id2))
                 return false;
-            if (!addNodeIfNotFound && (!_nodes.ContainsKey(id1) || !_nodes.ContainsKey(id2)))
+            if (!addNodeIfNotFound && (!_nodesDictionary.ContainsKey(id1) || !_nodesDictionary.ContainsKey(id2)))
                 throw new GraphCreationException("One or both nodes specified in an edge is not present in the graph");
 
-            GraphNode n1 = _nodes.ContainsKey(id1) ? _nodes[id1] : NewGraphNode(id1);
-            GraphNode n2 = _nodes.ContainsKey(id2) ? _nodes[id2] : NewGraphNode(id2);
+            GraphNode n1 = _nodesDictionary.ContainsKey(id1) ? _nodesDictionary[id1] : NewGraphNode(id1);
+            GraphNode n2 = _nodesDictionary.ContainsKey(id2) ? _nodesDictionary[id2] : NewGraphNode(id2);
 
             n1.AddNeighbor(n2);
             EmptyCache();
@@ -191,9 +195,9 @@ namespace GraphLibyn
 
         public bool RemoveEdge(string id1, string id2)
         {
-            if (!_nodes.ContainsKey(id1) || !_nodes.ContainsKey(id2))
+            if (!_nodesDictionary.ContainsKey(id1) || !_nodesDictionary.ContainsKey(id2))
                 throw new GraphException($"Remove edge failed, {id1} or {id2} is not in the graph.");
-            return RemoveEdge(_nodes[id1], _nodes[id2]);
+            return RemoveEdge(_nodesDictionary[id1], _nodesDictionary[id2]);
         }
 
         private List<int> _degreeVector = null;
@@ -203,7 +207,7 @@ namespace GraphLibyn
             get
             {
                 cacheIsEmpty = false;
-                return _degreeVector ?? (_degreeVector = AllNodes.Select(n => n.Degree).OrderBy(i => i).ToList());
+                return _degreeVector ?? (_degreeVector = Nodes.Select(n => n.Degree).OrderBy(i => i).ToList());
             }
         }
 
@@ -222,7 +226,7 @@ namespace GraphLibyn
             get
             {
                 cacheIsEmpty = false;
-                return _fiVector ?? (_fiVector = AllNodes.Select(n => n.FIndex).OrderBy(d => d).ToList());
+                return _fiVector ?? (_fiVector = Nodes.Select(n => n.FIndex).OrderBy(d => d).ToList());
             }
         }
 
@@ -243,7 +247,7 @@ namespace GraphLibyn
                 cacheIsEmpty = false;
                 return _degreeCountDictionary ??
                        (_degreeCountDictionary =
-                           AllNodes.GroupBy(n => n.Degree).ToDictionary(g => g.Key, g => g.Count()));
+                           Nodes.GroupBy(n => n.Degree).ToDictionary(g => g.Key, g => g.Count()));
             }
         }
 
@@ -255,8 +259,8 @@ namespace GraphLibyn
             {
                 cacheIsEmpty = false;
                 return _nodeDegreeProbabilityDictionary ??
-                       (_nodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
-                           .ToDictionary(g => g.Key, g => (double) g.Count()/AllNodes.Count()));
+                       (_nodeDegreeProbabilityDictionary = Nodes.GroupBy(n => n.Degree)
+                           .ToDictionary(g => g.Key, g => (double) g.Count()/Nodes.Count()));
             }
         }
 
@@ -275,8 +279,8 @@ namespace GraphLibyn
             {
                 cacheIsEmpty = false;
                 if (_edgeNodeDegreeProbabilityDictionary != null) return _edgeNodeDegreeProbabilityDictionary;
-                double denom = AllNodes.Sum(n => n.Degree);
-                 return _edgeNodeDegreeProbabilityDictionary = AllNodes.GroupBy(n => n.Degree)
+                double denom = Nodes.Sum(n => n.Degree);
+                 return _edgeNodeDegreeProbabilityDictionary = Nodes.GroupBy(n => n.Degree)
                     .ToDictionary(g => g.Key, g => g.Count()*g.Key/denom);
             }
         }
@@ -301,7 +305,7 @@ namespace GraphLibyn
                 cacheIsEmpty = false;
                 if (_jointEdgeNodeExcessDegreeProbabilityDictionary != null) return _jointEdgeNodeExcessDegreeProbabilityDictionary;
                 _jointEdgeNodeExcessDegreeProbabilityDictionary = new Dictionary<int, Dictionary<int, double>>();
-                var excDegreeGroups = AllNodes.GroupBy(n => n.ExcDegree);
+                var excDegreeGroups = Nodes.GroupBy(n => n.ExcDegree);
                 foreach (var excDegreeGroup in excDegreeGroups)
                 {
                     _jointEdgeNodeExcessDegreeProbabilityDictionary[excDegreeGroup.Key] = new Dictionary<int, double>();
@@ -357,7 +361,7 @@ namespace GraphLibyn
                 if (ExcessDegreeVariance == 0) // All vertices are the same degree, automatically perfect assortativity
                     return _graphAssortativity = 1.0;
 
-                var AllExcessDegrees = AllNodes.Select(n => n.ExcDegree).Distinct().ToList();
+                var AllExcessDegrees = Nodes.Select(n => n.ExcDegree).Distinct().ToList();
                 var total = 0.0;
 
                 foreach (var j in AllExcessDegrees)
@@ -615,7 +619,7 @@ namespace GraphLibyn
             {
                 cacheIsEmpty = false;
                 return Double.IsNegativeInfinity(_sumOfAllNodesAvgDiffs)
-                    ? _sumOfAllNodesAvgDiffs = AllNodes.Sum(n => n.AvgDiffFromNeighbors)
+                    ? _sumOfAllNodesAvgDiffs = Nodes.Sum(n => n.AvgDiffFromNeighbors)
                     : _sumOfAllNodesAvgDiffs;
             }
         }
@@ -628,7 +632,7 @@ namespace GraphLibyn
             {
                 cacheIsEmpty = false;
                 return Double.IsNegativeInfinity(_thedchansLambda)
-                    ? _thedchansLambda = (GraphAssortativity + 1.0)/AllNodes.Count()
+                    ? _thedchansLambda = (GraphAssortativity + 1.0)/Nodes.Count()
                     : _thedchansLambda;
             }
         }
@@ -641,7 +645,7 @@ namespace GraphLibyn
             {
                 cacheIsEmpty = false;
                 return Double.IsNegativeInfinity(_sumOfAllFiMaxOverMin)
-                    ? _sumOfAllFiMaxOverMin = AllNodes.Sum(n => n.FiMaxOverMin)
+                    ? _sumOfAllFiMaxOverMin = Nodes.Sum(n => n.FiMaxOverMin)
                     : _sumOfAllFiMaxOverMin;
             }
         }
@@ -654,10 +658,127 @@ namespace GraphLibyn
             {
                 cacheIsEmpty = false;
                 return Double.IsNegativeInfinity(_sumOfAllFiAbsoluteOfLn)
-                    ? _sumOfAllFiAbsoluteOfLn = AllNodes.Sum(n => n.FiAbsoluteOfLn)
+                    ? _sumOfAllFiAbsoluteOfLn = Nodes.Sum(n => n.FiAbsoluteOfLn)
                     : _sumOfAllFiAbsoluteOfLn;
             }
         }
+
+        #region RANDOM_GRAPHS  // methods to generate types of random graphs
+        // For random graph generating algorithms, this function will take a collection of nodes (caller may want to filter it for some reason)
+        // and a function that will give each node a value v, and node i will have v_i/sum(v) probability of being selected
+        protected List<GraphNode> SelectNodesWithBias(List<GraphNode> nodeCollection,
+            int numNodesToSelect, Func<GraphNode, double> nodeBiasValFunc, Randomizer randomizer, bool keepSelectedInCollection = false)
+        {
+            List<GraphNode> selectedNodes = new List<GraphNode>();
+
+            //var nodeCollectionList = nodeCollection.Select(n => new {node = (GraphNode)n, val = nodeBiasValFunc((GraphNode)n)}).ToList();
+            double sumOfAllVals = nodeCollection.Sum(nodeBiasValFunc);
+            
+
+            for (int i = 0; i < numNodesToSelect; i++)
+            {
+                double curr = 0.0;
+                double selectedVal = randomizer.NextDouble()*sumOfAllVals;
+                foreach (var n in nodeCollection)
+                {
+                    var currNodesVal = nodeBiasValFunc(n);
+                    if (curr <= selectedVal && curr + currNodesVal > selectedVal)
+                    {
+                        selectedNodes.Add(n);
+                        if (!keepSelectedInCollection)
+                        {
+                            nodeCollection.Remove(n);
+                            sumOfAllVals -= currNodesVal;
+                        }
+                        break;
+                    }
+                    curr += currNodesVal;
+                }
+            }
+
+            return selectedNodes;
+        }
+
+        // for random graphs, we'll allow the caller to skip the Id and just autoincrement using this (ignoring the risk of caller adding an existing id manually)
+        private int nextIdValue = 0;
+        protected string nextId => "n" + nextIdValue++;
+
+        // Add a new node per the Barabasi Albert algorithm, selecting a node with probability proportional to its degree
+        public void AddNewBaNode(string id, int m, Randomizer randomizer)
+        {
+            var node = NewGraphNode(id);
+            var connections = SelectNodesWithBias(Nodes.Select(n => (GraphNode)n).ToList(), m, n => n.Degree, randomizer);
+
+            foreach (var connection in connections)
+                AddEdge(node, connection);
+        }
+
+        // Wrapper to allow caller to rely on auto id
+        public void AddNewBaNode(int m, Randomizer randomizer) => AddNewBaNode(nextId, m, randomizer);
+
+        public static Graph NewBarabasiAlbertGraph(int n, int m, Randomizer randomizer)
+        {
+            Graph graph = new Graph();
+            GraphNode firstNode = graph.NewGraphNode(graph.nextId);
+            for (int i = 0; i < m; i++)
+                graph.AddEdge(firstNode, graph.NewGraphNode(graph.nextId));
+
+            for (int i = 0; i < n; i++) // leaving it imprecise, there will actually be n + m + 1 total nodes
+                graph.AddNewBaNode(m, randomizer);
+
+            return graph;
+        }
+
+
+
+        public static Graph NewErdosRenyiGraph(int n, double p, Randomizer randomizer)
+        {
+            Graph graph = new Graph();
+            for (int i = 0; i < n; i++)
+                graph.AddNode(graph.nextId);
+
+            var nodesList = graph._nodesDictionary.Values.ToList();
+            for (int i = 0; i < nodesList.Count; i++)
+                for (int j = i + 1; j < nodesList.Count; j++)
+                    if (randomizer.GetTrueWithProbability(p))
+                        graph.AddEdge(nodesList[i], nodesList[j]);
+
+            return graph;
+        }
+
+        // Trying to create a graph with both preferential attachment and high assortativity, have a few ideas for how to do
+        // this but trying this one because I think it's simplest, may come back and try a few others.. 
+        public static Graph NewCallawayPrefAttachmentAssortativeGraph(int n, long m, Randomizer randomizer,
+            bool highAssortativity = true)
+        {
+            Graph graph = new Graph();
+
+            for (int i = 0; i < n; i++)
+                graph.AddNode(graph.nextId);
+
+            for (long i = 0; i < m; i++)
+            {
+                var allNodesList = graph._nodesDictionary.Values.ToList(); // have to include zero-degree
+                GraphNode firstNode = graph.SelectNodesWithBias(allNodesList, 1, node => node.Degree + 1, randomizer).First();
+                // Remove nodes that are already neighbors
+                allNodesList.RemoveAll(new HashSet<GraphNode>(firstNode.Neighbors.Select(node => (GraphNode) node)).Contains);
+                if (!allNodesList.Any())
+                    continue;
+                var maxDiff = allNodesList.Max(node => Math.Abs(node.Degree - firstNode.Degree));
+                Func<GraphNode, double> biasFunc;
+                if (highAssortativity)
+                    biasFunc = node => Math.Pow(Math.Abs(node.Degree - maxDiff) + 1, 2);
+                else
+                    biasFunc = node => Math.Pow(Math.Abs(node.Degree - firstNode.Degree) + 1, 2);
+                var connection = graph.SelectNodesWithBias(allNodesList, 1, biasFunc, randomizer).FirstOrDefault();
+                if (connection != null) // unlikely, but if this node is already connected to all others the collection will be empty
+                    graph.AddEdge(connection, firstNode);
+            }
+
+            return graph;
+        }
+
+        #endregion
 
         /// <summary>
         /// Parse a graph from a string of lines (delimted by \n) in the form of N1\tN2
