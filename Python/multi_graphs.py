@@ -87,4 +87,4 @@ for g in graphs:
 plt.subplots_adjust(wspace=0)
 plt.margins(0,0)
 plt.tight_layout()
-plt.savefig('graphs.png', bbox_inches='tight', pad_inches=0.2)
+plt.savefig('graphs/multi_graphs.png', bbox_inches='tight', pad_inches=0.2)
